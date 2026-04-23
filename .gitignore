@@ -1,0 +1,32 @@
+# Go
+api/cmd/server/server
+api/tmp/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Node
+web/node_modules/
+web/dist/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# sqlc generated (tracked but marked)
+# api/internal/db/queries.sql.go
+# api/internal/db/models.go

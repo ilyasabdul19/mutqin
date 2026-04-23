@@ -1,0 +1,110 @@
+# generated: 2026-04-14
+# last_updated: 2026-04-14
+# project: Mutqin (مُتقِن)
+# project_key: NOKEY
+# tracking_system: file-system
+# story_location: docs
+
+# STATUS DEFINITIONS:
+# ==================
+# Epic Status:
+#   - backlog: Epic not yet started
+#   - in-progress: Epic actively being worked on
+#   - done: All stories in epic completed
+#
+# Epic Status Transitions:
+#   - backlog → in-progress: Automatically when first story is created (via create-story)
+#   - in-progress → done: Manually when all stories reach 'done' status
+#
+# Story Status:
+#   - backlog: Story only exists in epic file
+#   - ready-for-dev: Story file created in stories folder
+#   - in-progress: Developer actively working on implementation
+#   - review: Ready for code review (via Dev's code-review workflow)
+#   - done: Story completed
+#
+# Retrospective Status:
+#   - optional: Can be completed but not required
+#   - done: Retrospective has been completed
+#
+# WORKFLOW NOTES:
+# ===============
+# - Epic transitions to 'in-progress' automatically when first story is created
+# - Stories can be worked in parallel if team capacity allows
+# - Developer typically creates next story after previous one is 'done' to incorporate learnings
+# - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
+
+generated: 2026-04-14
+last_updated: 2026-04-14
+project: "Mutqin (مُتقِن)"
+project_key: NOKEY
+tracking_system: file-system
+story_location: docs
+
+development_status:
+  # Epic 1: Project Foundation & Authentication
+  epic-1: in-progress
+  1-1-project-scaffolding-and-database-setup: done
+  1-2-phone-otp-authentication: backlog
+  1-3-role-based-access-control: backlog
+  epic-1-retrospective: optional
+
+  # Epic 2: Platform Administration & Center Onboarding
+  epic-2: backlog
+  2-1-create-center-organization: backlog
+  2-2-generate-center-admin-invite-link: backlog
+  2-3-center-admin-activates-account-via-invite: backlog
+  2-4-platform-wide-dashboard: backlog
+  2-5-manage-center-organizations: backlog
+  epic-2-retrospective: optional
+
+  # Epic 3: Center Landing Page & Public Presence
+  epic-3: backlog
+  3-1-create-and-publish-landing-page: backlog
+  3-2-post-announcements: backlog
+  3-3-create-registration-form: backlog
+  3-4-parent-submits-registration: backlog
+  3-5-manage-registration-applications: backlog
+  epic-3-retrospective: optional
+
+  # Epic 4: Halaqah & Teacher Management
+  epic-4: backlog
+  4-1-create-and-manage-halaqat: backlog
+  4-2-invite-and-onboard-teachers: backlog
+  4-3-assign-teachers-to-halaqat: backlog
+  4-4-enroll-and-transfer-students: backlog
+  epic-4-retrospective: optional
+
+  # Epic 5: Recitation Recording
+  epic-5: backlog
+  5-1-quran-reference-data-setup: backlog
+  5-2-record-individual-student-recitation: backlog
+  5-3-session-flow-for-full-halaqah: backlog
+  5-4-offline-recitation-recording: backlog
+  epic-5-retrospective: optional
+
+  # Epic 6: Attendance Tracking
+  epic-6: backlog
+  6-1-mark-daily-attendance: backlog
+  6-2-view-attendance-records: backlog
+  epic-6-retrospective: optional
+
+  # Epic 7: Offline Sync & Data Caching
+  epic-7: backlog
+  7-1-local-data-caching: backlog
+  7-2-offline-queue-and-auto-sync: backlog
+  7-3-sync-conflict-handling: backlog
+  epic-7-retrospective: optional
+
+  # Epic 8: Dashboard & Reporting
+  epic-8: backlog
+  8-1-center-overview-dashboard: backlog
+  8-2-attendance-trends: backlog
+  8-3-recitation-activity-and-student-progress: backlog
+  epic-8-retrospective: optional
+
+  # Epic 9: Localization & Mobile Optimization
+  epic-9: backlog
+  9-1-arabic-and-somali-language-support: backlog
+  9-2-mobile-optimized-ui: backlog
+  epic-9-retrospective: optional

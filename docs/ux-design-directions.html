@@ -1,0 +1,1039 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mutqin — Design Directions</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  /* ── Reset & Base ── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: #F3F4F6;
+    color: #111827;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── Page Header ── */
+  .page-header {
+    background: linear-gradient(135deg, #065F46 0%, #059669 100%);
+    color: white;
+    padding: 48px 24px 56px;
+    text-align: center;
+  }
+  .page-header h1 {
+    font-family: 'Inter', sans-serif;
+    font-size: 32px;
+    font-weight: 600;
+    letter-spacing: -0.5px;
+    margin-bottom: 4px;
+  }
+  .page-header h1 span {
+    font-family: 'Cairo', sans-serif;
+    font-weight: 700;
+    opacity: 0.7;
+    font-size: 24px;
+    margin-left: 8px;
+  }
+  .page-header .subtitle {
+    font-size: 16px;
+    opacity: 0.85;
+    max-width: 600px;
+    margin: 8px auto 0;
+    line-height: 1.6;
+  }
+  .page-header .meta {
+    display: flex;
+    gap: 24px;
+    justify-content: center;
+    margin-top: 20px;
+    font-size: 13px;
+    opacity: 0.7;
+  }
+
+  /* ── Directions Grid ── */
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 48px;
+    max-width: 1200px;
+    margin: -24px auto 64px;
+    padding: 0 32px;
+  }
+  @media (max-width: 900px) {
+    .grid { grid-template-columns: 1fr; max-width: 480px; gap: 40px; }
+  }
+
+  /* ── Direction Card ── */
+  .direction {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .direction-label {
+    background: white;
+    border: 1px solid #E5E7EB;
+    border-radius: 12px;
+    padding: 12px 20px;
+    margin-bottom: 16px;
+    text-align: center;
+    width: 100%;
+    max-width: 400px;
+  }
+  .direction-label .number {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: #059669;
+    margin-bottom: 2px;
+  }
+  .direction-label h2 {
+    font-size: 18px;
+    font-weight: 600;
+    color: #111827;
+    margin-bottom: 4px;
+  }
+  .direction-label p {
+    font-size: 13px;
+    color: #6B7280;
+    line-height: 1.5;
+  }
+
+  /* ── Phone Frame ── */
+  .phone-frame {
+    width: 375px;
+    height: 700px;
+    border: 3px solid #1F2937;
+    border-radius: 36px;
+    overflow: hidden;
+    background: #F9FAFB;
+    position: relative;
+    flex-shrink: 0;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.08), inset 0 0 0 1px rgba(255,255,255,0.1);
+  }
+  .phone-frame::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 120px;
+    height: 24px;
+    background: #1F2937;
+    border-radius: 0 0 16px 16px;
+    z-index: 10;
+  }
+
+  /* ── Shared inner styles ── */
+  .screen {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    font-family: 'Cairo', 'Inter', sans-serif;
+  }
+
+  /* Status bar */
+  .status-bar {
+    height: 36px;
+    background: white;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+    font-size: 12px;
+    font-weight: 600;
+    font-family: 'Inter', sans-serif;
+    color: #111827;
+    flex-shrink: 0;
+  }
+  .status-bar .time { font-size: 13px; font-weight: 600; }
+  .status-icons { display: flex; gap: 4px; align-items: center; }
+  .status-icons svg { width: 14px; height: 14px; fill: #111827; }
+
+  /* Top app bar */
+  .top-bar {
+    background: white;
+    border-bottom: 1px solid #E5E7EB;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+  .top-bar-title {
+    font-family: 'Cairo', sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: #111827;
+  }
+
+  /* Bottom tab bar */
+  .tab-bar {
+    height: 56px;
+    background: white;
+    border-top: 1px solid #E5E7EB;
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    flex-shrink: 0;
+    padding-bottom: 4px;
+  }
+  .tab-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    font-size: 10px;
+    color: #6B7280;
+    font-family: 'Cairo', sans-serif;
+  }
+  .tab-item.active { color: #059669; }
+  .tab-item svg { width: 22px; height: 22px; }
+
+  /* ── Direction 1: Minimal Cards ── */
+  .d1-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+  }
+  .d1-session-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  .d1-session-info .date {
+    font-family: 'Cairo', sans-serif;
+    font-size: 14px;
+    color: #374151;
+  }
+  .d1-section-title {
+    font-family: 'Cairo', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: #6B7280;
+    margin-bottom: 10px;
+  }
+  .d1-card {
+    background: white;
+    border: 1px solid #E5E7EB;
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 10px;
+  }
+  .d1-card-name {
+    font-family: 'Cairo', sans-serif;
+    font-size: 16px;
+    font-weight: 600;
+    color: #111827;
+    margin-bottom: 4px;
+  }
+  .d1-card-sub {
+    font-family: 'Cairo', sans-serif;
+    font-size: 13px;
+    color: #6B7280;
+  }
+  .d1-start-btn {
+    margin: 0 16px 12px;
+    background: #059669;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 14px;
+    font-family: 'Cairo', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    width: calc(100% - 32px);
+    text-align: center;
+    cursor: pointer;
+  }
+
+  /* ── Direction 2: Compact List ── */
+  .d2-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px 16px;
+  }
+  .d2-search {
+    background: white;
+    border: 1px solid #E5E7EB;
+    border-radius: 8px;
+    padding: 10px 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .d2-search svg { width: 16px; height: 16px; fill: #9CA3AF; flex-shrink: 0; }
+  .d2-search span {
+    font-family: 'Cairo', sans-serif;
+    font-size: 13px;
+    color: #9CA3AF;
+  }
+  .d2-row {
+    background: white;
+    border: 1px solid #E5E7EB;
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .d2-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #D1FAE5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Cairo', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    color: #065F46;
+    flex-shrink: 0;
+  }
+  .d2-info { flex: 1; min-width: 0; }
+  .d2-name {
+    font-family: 'Cairo', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: #111827;
+  }
+  .d2-surah {
+    font-family: 'Cairo', sans-serif;
+    font-size: 11px;
+    color: #6B7280;
+  }
+  .d2-badge {
+    font-family: 'Cairo', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 10px;
+    flex-shrink: 0;
+  }
+  .d2-badge.green { background: #D1FAE5; color: #065F46; }
+  .d2-badge.amber { background: #FEF3C7; color: #92400E; }
+  .d2-badge.red   { background: #FEE2E2; color: #991B1B; }
+  .d2-fab {
+    position: absolute;
+    bottom: 72px;
+    left: 24px;
+    width: 56px;
+    height: 56px;
+    background: #059669;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(5,150,105,0.3);
+  }
+  .d2-fab svg { width: 24px; height: 24px; fill: white; }
+
+  /* ── Direction 3: Session Flow ── */
+  .d3-progress-bar {
+    background: white;
+    border-bottom: 1px solid #E5E7EB;
+    padding: 8px 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+  .d3-progress-track {
+    flex: 1;
+    height: 6px;
+    background: #E5E7EB;
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .d3-progress-fill {
+    width: 38.8%;
+    height: 100%;
+    background: #059669;
+    border-radius: 3px;
+  }
+  .d3-progress-text {
+    font-family: 'Cairo', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    color: #374151;
+    white-space: nowrap;
+  }
+  .d3-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px 16px;
+  }
+  .d3-student-name {
+    font-family: 'Cairo', sans-serif;
+    font-size: 24px;
+    font-weight: 700;
+    color: #111827;
+    text-align: center;
+    margin-bottom: 4px;
+  }
+  .d3-last-pos {
+    font-family: 'Cairo', sans-serif;
+    font-size: 14px;
+    color: #6B7280;
+    text-align: center;
+    margin-bottom: 16px;
+  }
+  .d3-next-pos {
+    background: #ECFDF5;
+    border: 1px solid #D1FAE5;
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-family: 'Cairo', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    color: #065F46;
+    text-align: center;
+    margin-bottom: 24px;
+  }
+  .d3-section-label {
+    font-family: 'Cairo', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    color: #6B7280;
+    margin-bottom: 8px;
+  }
+  .d3-type-btns {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+  .d3-type-btn {
+    flex: 1;
+    padding: 10px 4px;
+    border-radius: 8px;
+    font-family: 'Cairo', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    text-align: center;
+    border: 1px solid #E5E7EB;
+    background: white;
+    color: #374151;
+  }
+  .d3-type-btn.active {
+    background: #059669;
+    border-color: #059669;
+    color: white;
+  }
+  .d3-grade-btns {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 24px;
+  }
+  .d3-grade-btn {
+    flex: 1;
+    padding: 12px 4px;
+    border-radius: 8px;
+    font-family: 'Cairo', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    text-align: center;
+    background: white;
+    border: 1px solid #E5E7EB;
+    color: #374151;
+  }
+  .d3-grade-btn.selected {
+    background: #065F46;
+    border-color: #065F46;
+    color: white;
+  }
+  .d3-notes {
+    background: white;
+    border: 1px solid #E5E7EB;
+    border-radius: 8px;
+    padding: 12px;
+    font-family: 'Cairo', sans-serif;
+    font-size: 13px;
+    color: #9CA3AF;
+    min-height: 60px;
+    margin-bottom: 16px;
+  }
+  .d3-submit-row {
+    display: flex;
+    gap: 10px;
+    padding: 0 16px 12px;
+    flex-shrink: 0;
+  }
+  .d3-submit {
+    flex: 1;
+    padding: 14px;
+    border-radius: 8px;
+    font-family: 'Cairo', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    text-align: center;
+    background: #059669;
+    color: white;
+    border: none;
+  }
+  .d3-skip {
+    padding: 14px 18px;
+    border-radius: 8px;
+    font-family: 'Cairo', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    text-align: center;
+    background: white;
+    border: 1px solid #E5E7EB;
+    color: #6B7280;
+  }
+  .d3-swipe-hint {
+    text-align: center;
+    padding: 8px;
+    font-family: 'Cairo', sans-serif;
+    font-size: 12px;
+    color: #9CA3AF;
+    flex-shrink: 0;
+  }
+
+  /* ── Direction 4: Landing Page ── */
+  .d4-screen {
+    background: #F9FAFB;
+  }
+  .d4-hero {
+    background: linear-gradient(180deg, #065F46 0%, #059669 100%);
+    padding: 48px 24px 32px;
+    text-align: center;
+    color: white;
+  }
+  .d4-logo {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 16px;
+    border: 2px solid rgba(255,255,255,0.3);
+  }
+  .d4-logo svg { width: 36px; height: 36px; fill: white; }
+  .d4-center-name {
+    font-family: 'Cairo', sans-serif;
+    font-size: 26px;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+  .d4-center-sub {
+    font-family: 'Cairo', sans-serif;
+    font-size: 14px;
+    opacity: 0.85;
+    margin-bottom: 4px;
+  }
+  .d4-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+  }
+  .d4-info-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .d4-info-card {
+    flex: 1;
+    background: white;
+    border: 1px solid #E5E7EB;
+    border-radius: 8px;
+    padding: 12px;
+    text-align: center;
+  }
+  .d4-info-card svg { width: 20px; height: 20px; fill: #059669; margin-bottom: 4px; }
+  .d4-info-card .label {
+    font-family: 'Cairo', sans-serif;
+    font-size: 11px;
+    color: #6B7280;
+    margin-bottom: 2px;
+  }
+  .d4-info-card .value {
+    font-family: 'Cairo', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    color: #111827;
+  }
+  .d4-cta {
+    background: #059669;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 14px;
+    font-family: 'Cairo', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    width: 100%;
+    text-align: center;
+    margin-bottom: 20px;
+    cursor: pointer;
+  }
+  .d4-section-title {
+    font-family: 'Cairo', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    color: #111827;
+    margin-bottom: 10px;
+  }
+  .d4-announcement {
+    background: white;
+    border: 1px solid #E5E7EB;
+    border-radius: 8px;
+    padding: 14px;
+    margin-bottom: 8px;
+  }
+  .d4-announcement .title {
+    font-family: 'Cairo', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: #111827;
+    margin-bottom: 4px;
+  }
+  .d4-announcement .body {
+    font-family: 'Cairo', sans-serif;
+    font-size: 12px;
+    color: #6B7280;
+    line-height: 1.6;
+  }
+  .d4-announcement .date {
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    color: #9CA3AF;
+    margin-top: 6px;
+  }
+  .d4-footer {
+    text-align: center;
+    padding: 16px;
+    font-size: 12px;
+    color: #9CA3AF;
+    flex-shrink: 0;
+    border-top: 1px solid #E5E7EB;
+    background: white;
+  }
+  .d4-footer span {
+    color: #059669;
+    font-weight: 600;
+  }
+
+  /* ── Offline dot ── */
+  .offline-dot {
+    width: 8px;
+    height: 8px;
+    background: #D97706;
+    border-radius: 50%;
+    display: inline-block;
+  }
+
+  /* ── Footer ── */
+  .page-footer {
+    text-align: center;
+    padding: 32px 24px 48px;
+    color: #9CA3AF;
+    font-size: 13px;
+  }
+  .page-footer a { color: #059669; text-decoration: none; }
+</style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════ PAGE HEADER ════════════════════════════════════════════ -->
+<header class="page-header">
+  <h1>Mutqin <span>مُتقِن</span></h1>
+  <p class="subtitle">Quran memorization center management PWA for East Africa. Mobile-first, offline-ready, designed for low-end Android devices.</p>
+  <div class="meta">
+    <span>Design Review</span>
+    <span>April 2026</span>
+    <span>4 Directions</span>
+  </div>
+</header>
+
+<!-- ════════════════════════════════════════════ GRID ════════════════════════════════════════════ -->
+<div class="grid">
+
+<!-- ─────────── DIRECTION 1: Minimal Cards ─────────── -->
+<div class="direction">
+  <div class="direction-label">
+    <div class="number">Direction 1</div>
+    <h2>Minimal Cards</h2>
+    <p>Clean student list with generous white space. Full-width session button. Optimized for clarity and ease of scanning.</p>
+  </div>
+  <div class="phone-frame">
+    <div class="screen" dir="rtl">
+      <!-- Status bar -->
+      <div class="status-bar" dir="ltr">
+        <span class="time">9:41</span>
+        <div class="status-icons">
+          <svg viewBox="0 0 24 24"><path d="M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.08 2.93 1 9zm8 8l3 3 3-3c-1.65-1.66-4.34-1.66-6 0zm-4-4l2 2c2.76-2.76 7.24-2.76 10 0l2-2C15.14 9.14 8.87 9.14 5 13z"/></svg>
+          <svg viewBox="0 0 24 24"><path d="M15.67 4H14V2h-4v2H8.33C7.6 4 7 4.6 7 5.33v15.33C7 21.4 7.6 22 8.33 22h7.33c.74 0 1.34-.6 1.34-1.33V5.33C17 4.6 16.4 4 15.67 4z"/></svg>
+        </div>
+      </div>
+
+      <!-- Top bar -->
+      <div class="top-bar">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="#6B7280"><circle cx="12" cy="5.5" r="2.5"/><circle cx="5.5" cy="12" r="2.5"/><circle cx="18.5" cy="12" r="2.5"/></svg>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span class="top-bar-title">حلقتي</span>
+          <span class="offline-dot" title="غير متصل"></span>
+        </div>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="#6B7280"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg>
+      </div>
+
+      <!-- Content -->
+      <div class="d1-content">
+        <div class="d1-session-info">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="#6B7280"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z"/></svg>
+          <span class="d1-session-info date">الأحد ١٣ أبريل ٢٠٢٦</span>
+        </div>
+
+        <div class="d1-section-title">الطلاب — ١٨ طالب</div>
+
+        <div class="d1-card">
+          <div class="d1-card-name">أحمد يوسف محمد</div>
+          <div class="d1-card-sub">آخر موضع: سورة الملك، آية ١٠</div>
+        </div>
+        <div class="d1-card">
+          <div class="d1-card-name">عبدالله عمر حسن</div>
+          <div class="d1-card-sub">آخر موضع: سورة القلم، آية ٢٣</div>
+        </div>
+        <div class="d1-card">
+          <div class="d1-card-name">فاطمة علي نور</div>
+          <div class="d1-card-sub">آخر موضع: سورة الحاقة، آية ١</div>
+        </div>
+        <div class="d1-card">
+          <div class="d1-card-name">خالد إبراهيم عثمان</div>
+          <div class="d1-card-sub">آخر موضع: سورة المعارج، آية ١٥</div>
+        </div>
+        <div class="d1-card">
+          <div class="d1-card-name">مريم حسين أبوبكر</div>
+          <div class="d1-card-sub">آخر موضع: سورة نوح، آية ٧</div>
+        </div>
+      </div>
+
+      <!-- Start session button -->
+      <div class="d1-start-btn">ابدأ الحصة</div>
+
+      <!-- Tab bar -->
+      <div class="tab-bar">
+        <div class="tab-item active">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+          <span>الرئيسية</span>
+        </div>
+        <div class="tab-item">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+          <span>الطلاب</span>
+        </div>
+        <div class="tab-item">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 14c1.66 0 2.99-1.34 2.99-3L15 5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z"/></svg>
+          <span>تسجيل</span>
+        </div>
+        <div class="tab-item">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.07.62-.07.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+          <span>الإعدادات</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ─────────── DIRECTION 2: Compact List ─────────── -->
+<div class="direction">
+  <div class="direction-label">
+    <div class="number">Direction 2</div>
+    <h2>Compact List</h2>
+    <p>Dense student rows with avatars, surah info, and grade badges. FAB for session start. Fits more data on screen.</p>
+  </div>
+  <div class="phone-frame">
+    <div class="screen" dir="rtl">
+      <div class="status-bar" dir="ltr">
+        <span class="time">9:41</span>
+        <div class="status-icons">
+          <svg viewBox="0 0 24 24"><path d="M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.08 2.93 1 9zm8 8l3 3 3-3c-1.65-1.66-4.34-1.66-6 0zm-4-4l2 2c2.76-2.76 7.24-2.76 10 0l2-2C15.14 9.14 8.87 9.14 5 13z"/></svg>
+          <svg viewBox="0 0 24 24"><path d="M15.67 4H14V2h-4v2H8.33C7.6 4 7 4.6 7 5.33v15.33C7 21.4 7.6 22 8.33 22h7.33c.74 0 1.34-.6 1.34-1.33V5.33C17 4.6 16.4 4 15.67 4z"/></svg>
+        </div>
+      </div>
+
+      <div class="top-bar">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="#6B7280"><circle cx="12" cy="5.5" r="2.5"/><circle cx="5.5" cy="12" r="2.5"/><circle cx="18.5" cy="12" r="2.5"/></svg>
+        <span class="top-bar-title">حلقتي</span>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="#6B7280"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg>
+      </div>
+
+      <div class="d2-content">
+        <div class="d2-search">
+          <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+          <span>ابحث عن طالب...</span>
+        </div>
+
+        <div class="d2-row">
+          <div class="d2-avatar">أي</div>
+          <div class="d2-info">
+            <div class="d2-name">أحمد يوسف محمد</div>
+            <div class="d2-surah">الملك، آية ١٠</div>
+          </div>
+          <div class="d2-badge green">ممتاز</div>
+        </div>
+        <div class="d2-row">
+          <div class="d2-avatar">عح</div>
+          <div class="d2-info">
+            <div class="d2-name">عبدالله عمر حسن</div>
+            <div class="d2-surah">القلم، آية ٢٣</div>
+          </div>
+          <div class="d2-badge green">جيد جداً</div>
+        </div>
+        <div class="d2-row">
+          <div class="d2-avatar">فن</div>
+          <div class="d2-info">
+            <div class="d2-name">فاطمة علي نور</div>
+            <div class="d2-surah">الحاقة، آية ١</div>
+          </div>
+          <div class="d2-badge green">جيد</div>
+        </div>
+        <div class="d2-row">
+          <div class="d2-avatar">خع</div>
+          <div class="d2-info">
+            <div class="d2-name">خالد إبراهيم عثمان</div>
+            <div class="d2-surah">المعارج، آية ١٥</div>
+          </div>
+          <div class="d2-badge amber">مقبول</div>
+        </div>
+        <div class="d2-row">
+          <div class="d2-avatar">مأ</div>
+          <div class="d2-info">
+            <div class="d2-name">مريم حسين أبوبكر</div>
+            <div class="d2-surah">نوح، آية ٧</div>
+          </div>
+          <div class="d2-badge green">جيد جداً</div>
+        </div>
+        <div class="d2-row">
+          <div class="d2-avatar">يم</div>
+          <div class="d2-info">
+            <div class="d2-name">ياسر محمد علي</div>
+            <div class="d2-surah">الجن، آية ٣</div>
+          </div>
+          <div class="d2-badge red">ضعيف</div>
+        </div>
+        <div class="d2-row">
+          <div class="d2-avatar">سع</div>
+          <div class="d2-info">
+            <div class="d2-name">سعاد عبدي حسن</div>
+            <div class="d2-surah">المزمل، آية ١١</div>
+          </div>
+          <div class="d2-badge green">ممتاز</div>
+        </div>
+        <div class="d2-row">
+          <div class="d2-avatar">نأ</div>
+          <div class="d2-info">
+            <div class="d2-name">نور أحمد فارح</div>
+            <div class="d2-surah">المدثر، آية ٥</div>
+          </div>
+          <div class="d2-badge amber">مقبول</div>
+        </div>
+      </div>
+
+      <!-- FAB -->
+      <div class="d2-fab">
+        <svg viewBox="0 0 24 24"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>
+      </div>
+
+      <div class="tab-bar" style="font-size:9px;">
+        <div class="tab-item active">
+          <svg viewBox="0 0 24 24" fill="currentColor" style="width:20px;height:20px;"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+          <span>الرئيسية</span>
+        </div>
+        <div class="tab-item">
+          <svg viewBox="0 0 24 24" fill="currentColor" style="width:20px;height:20px;"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+          <span>الطلاب</span>
+        </div>
+        <div class="tab-item">
+          <svg viewBox="0 0 24 24" fill="currentColor" style="width:20px;height:20px;"><path d="M12 14c1.66 0 2.99-1.34 2.99-3L15 5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z"/></svg>
+          <span>تسجيل</span>
+        </div>
+        <div class="tab-item">
+          <svg viewBox="0 0 24 24" fill="currentColor" style="width:20px;height:20px;"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.07.62-.07.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+          <span>الإعدادات</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ─────────── DIRECTION 3: Session Flow Focus ─────────── -->
+<div class="direction">
+  <div class="direction-label">
+    <div class="number">Direction 3</div>
+    <h2>Session Flow Focus</h2>
+    <p>The core recitation recording screen. Pre-filled positions, type selection, five-point grading, and swipe-through flow.</p>
+  </div>
+  <div class="phone-frame">
+    <div class="screen" dir="rtl">
+      <div class="status-bar" dir="ltr">
+        <span class="time">9:41</span>
+        <div class="status-icons">
+          <svg viewBox="0 0 24 24"><path d="M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.08 2.93 1 9zm8 8l3 3 3-3c-1.65-1.66-4.34-1.66-6 0zm-4-4l2 2c2.76-2.76 7.24-2.76 10 0l2-2C15.14 9.14 8.87 9.14 5 13z"/></svg>
+          <svg viewBox="0 0 24 24"><path d="M15.67 4H14V2h-4v2H8.33C7.6 4 7 4.6 7 5.33v15.33C7 21.4 7.6 22 8.33 22h7.33c.74 0 1.34-.6 1.34-1.33V5.33C17 4.6 16.4 4 15.67 4z"/></svg>
+        </div>
+      </div>
+
+      <!-- Top bar with back + close -->
+      <div class="top-bar">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="#DC2626"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        <span class="top-bar-title" style="font-size:16px;">تسجيل الحصة</span>
+        <div style="width:20px;"></div>
+      </div>
+
+      <!-- Progress bar -->
+      <div class="d3-progress-bar">
+        <div class="d3-progress-text">٧ / ١٨</div>
+        <div class="d3-progress-track">
+          <div class="d3-progress-fill"></div>
+        </div>
+      </div>
+
+      <!-- Content -->
+      <div class="d3-content">
+        <div class="d3-student-name">أحمد يوسف محمد</div>
+        <div class="d3-last-pos">آخر موضع: الملك، آية ١٠</div>
+
+        <div class="d3-next-pos">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="#059669" style="vertical-align:-2px;margin-left:4px;"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+          تابع: الملك، آية ١١–١٥
+        </div>
+
+        <div class="d3-section-label">نوع التسميع</div>
+        <div class="d3-type-btns">
+          <div class="d3-type-btn active">حفظ جديد</div>
+          <div class="d3-type-btn">مراجعة قريبة</div>
+          <div class="d3-type-btn">مراجعة بعيدة</div>
+        </div>
+
+        <div class="d3-section-label">التقييم</div>
+        <div class="d3-grade-btns">
+          <div class="d3-grade-btn selected">ممتاز</div>
+          <div class="d3-grade-btn">جيد جداً</div>
+          <div class="d3-grade-btn">جيد</div>
+          <div class="d3-grade-btn">مقبول</div>
+          <div class="d3-grade-btn">ضعيف</div>
+        </div>
+
+        <div class="d3-section-label">ملاحظات (اختياري)</div>
+        <div class="d3-notes">أضف ملاحظات للطالب...</div>
+      </div>
+
+      <!-- Submit row -->
+      <div class="d3-submit-row">
+        <div class="d3-skip">تخطي</div>
+        <div class="d3-submit">حفظ والتالي ←</div>
+      </div>
+
+      <!-- Swipe hint -->
+      <div class="d3-swipe-hint">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="#9CA3AF" style="vertical-align:-2px;"><path d="M6.99 11L3 15l3.99 4v-3H14v-2H6.99v-3zM21 9l-3.99-4v3H10v2h7.01v3L21 9z"/></svg>
+        اسحب للتنقل بين الطلاب
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ─────────── DIRECTION 4: Landing Page Preview ─────────── -->
+<div class="direction">
+  <div class="direction-label">
+    <div class="number">Direction 4</div>
+    <h2>Landing Page Preview</h2>
+    <p>Public center page at mutqin.app/ibn-kathir. Parent-facing registration CTA with center info and announcements.</p>
+  </div>
+  <div class="phone-frame">
+    <div class="screen d4-screen" dir="rtl">
+      <div class="status-bar" dir="ltr" style="background:transparent;color:white;position:absolute;top:0;left:0;right:0;z-index:2;">
+        <span class="time" style="color:white;">9:41</span>
+        <div class="status-icons">
+          <svg viewBox="0 0 24 24" style="fill:white;"><path d="M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.08 2.93 1 9zm8 8l3 3 3-3c-1.65-1.66-4.34-1.66-6 0zm-4-4l2 2c2.76-2.76 7.24-2.76 10 0l2-2C15.14 9.14 8.87 9.14 5 13z"/></svg>
+          <svg viewBox="0 0 24 24" style="fill:white;"><path d="M15.67 4H14V2h-4v2H8.33C7.6 4 7 4.6 7 5.33v15.33C7 21.4 7.6 22 8.33 22h7.33c.74 0 1.34-.6 1.34-1.33V5.33C17 4.6 16.4 4 15.67 4z"/></svg>
+        </div>
+      </div>
+
+      <!-- Hero -->
+      <div class="d4-hero">
+        <div class="d4-logo">
+          <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 5.5c0-.28.22-.5.5-.5h1c.28 0 .5.22.5.5v3c0 .28-.22.5-.5.5h-1c-.28 0-.5-.22-.5-.5v-3zM12 18c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L12 12l5.3-2.8c.45.83.7 1.79.7 2.8 0 3.31-2.69 6-6 6z"/><path d="M12 3.5l-1.5 3L12 8l1.5-1.5L12 3.5z" opacity="0.8"/><path d="M8.5 9L7 10.5 8.5 12l1.5-1.5L8.5 9z" opacity="0.6"/><path d="M15.5 9L14 10.5 15.5 12l1.5-1.5L15.5 9z" opacity="0.6"/></svg>
+        </div>
+        <div class="d4-center-name">مركز ابن كثير</div>
+        <div class="d4-center-sub">لتحفيظ القرآن الكريم</div>
+        <div style="font-family:'Cairo',sans-serif;font-size:12px;opacity:0.7;margin-top:4px;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="white" style="vertical-align:-1px;margin-left:4px;"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+          مقديشو، الصومال
+        </div>
+      </div>
+
+      <!-- Content -->
+      <div class="d4-content">
+        <div class="d4-info-row">
+          <div class="d4-info-card">
+            <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+            <div class="label">الطلاب</div>
+            <div class="value">١٢٠</div>
+          </div>
+          <div class="d4-info-card">
+            <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+            <div class="label">الحلقات</div>
+            <div class="value">٨</div>
+          </div>
+          <div class="d4-info-card">
+            <svg viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>
+            <div class="label">الأوقات</div>
+            <div class="value">صباح / مساء</div>
+          </div>
+        </div>
+
+        <div class="d4-cta">سجّل طفلك</div>
+
+        <div class="d4-section-title">آخر الإعلانات</div>
+
+        <div class="d4-announcement">
+          <div class="title">بدء التسجيل للفصل الجديد</div>
+          <div class="body">يسرنا الإعلان عن فتح باب التسجيل للفصل الدراسي الثاني. الرجاء التسجيل قبل نهاية الشهر.</div>
+          <div class="date">10 Apr 2026</div>
+        </div>
+
+        <div class="d4-announcement">
+          <div class="title">حفل تخريج حفظة جزء عمّ</div>
+          <div class="body">ندعوكم لحضور حفل تخريج الطلاب الذين أتمّوا حفظ جزء عمّ يوم الجمعة القادم.</div>
+          <div class="date">5 Apr 2026</div>
+        </div>
+
+        <div class="d4-announcement">
+          <div class="title">عطلة رسمية</div>
+          <div class="body">سيكون المركز مغلقاً يوم الخميس بمناسبة العيد الوطني.</div>
+          <div class="date">28 Mar 2026</div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="d4-footer">
+        Powered by <span>Mutqin</span> مُتقِن
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- end grid -->
+
+<!-- ════════════════════════════════════════════ PAGE FOOTER ════════════════════════════════════════════ -->
+<footer class="page-footer">
+  Mutqin Design Directions &mdash; For internal review only &mdash; April 2026
+</footer>
+
+</body>
+</html>

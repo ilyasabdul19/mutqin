@@ -1,0 +1,15 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: mutqin-db
+    environment:
+      POSTGRES_USER: mutqin
+      POSTGRES_PASSWORD: mutqin
+      POSTGRES_DB: mutqin
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:

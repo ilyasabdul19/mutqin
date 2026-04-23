@@ -1,0 +1,43 @@
+{
+  "app": {
+    "name": "مُتقِن"
+  },
+  "common": {
+    "save": "حفظ",
+    "cancel": "إلغاء",
+    "delete": "حذف",
+    "edit": "تعديل",
+    "loading": "جارٍ التحميل...",
+    "error": "حدث خطأ",
+    "online": "متصل",
+    "offline": "غير متصل",
+    "switchLanguage": "تغيير اللغة",
+    "skipToContent": "تخطي إلى المحتوى",
+    "syncing": "جارٍ المزامنة...",
+    "saved": "تم الحفظ",
+    "retry": "إعادة المحاولة",
+    "back": "رجوع",
+    "next": "التالي",
+    "close": "إغلاق"
+  },
+  "auth": {
+    "email": "البريد الإلكتروني",
+    "enterCode": "أدخل رمز التحقق",
+    "sendCode": "إرسال الرمز",
+    "verify": "تحقق",
+    "emailPlaceholder": "email@example.com"
+  },
+  "nav": {
+    "home": "الرئيسية",
+    "students": "الطلاب",
+    "record": "التسجيل",
+    "settings": "الإعدادات",
+    "attendance": "الحضور"
+  },
+  "empty": {
+    "welcome": "مرحباً بك في مُتقِن",
+    "noStudents": "لا يوجد طلاب بعد",
+    "noSessions": "لا توجد جلسات بعد",
+    "noAttendance": "لا يوجد سجل حضور"
+  }
+}

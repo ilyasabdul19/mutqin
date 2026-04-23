@@ -1,0 +1,43 @@
+{
+  "app": {
+    "name": "Mutqin"
+  },
+  "common": {
+    "save": "Kaydi",
+    "cancel": "Ka noqo",
+    "delete": "Tirtir",
+    "edit": "Wax ka bedel",
+    "loading": "Soo dejinayaa...",
+    "error": "Khalad ayaa dhacay",
+    "online": "Online",
+    "offline": "Offline",
+    "switchLanguage": "Bedel luuqadda",
+    "skipToContent": "U bood qoraalka",
+    "syncing": "Isku dubbaridayaa...",
+    "saved": "Waa la keydiyay",
+    "retry": "Dib u isku day",
+    "back": "Dib u noqo",
+    "next": "Xiga",
+    "close": "Xir"
+  },
+  "auth": {
+    "email": "Email",
+    "enterCode": "Gali koodka xaqiijinta",
+    "sendCode": "Dir koodka",
+    "verify": "Xaqiiji",
+    "emailPlaceholder": "email@example.com"
+  },
+  "nav": {
+    "home": "Bogga hore",
+    "students": "Ardayda",
+    "record": "Duubista",
+    "settings": "Goobaha",
+    "attendance": "Imaanshaha"
+  },
+  "empty": {
+    "welcome": "Ku soo dhawoow Mutqin",
+    "noStudents": "Wali arday ma jiraan",
+    "noSessions": "Wali kulan ma jiraan",
+    "noAttendance": "Wali diiwaanka imaanshaha ma jiraan"
+  }
+}
