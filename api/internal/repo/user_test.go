@@ -12,7 +12,7 @@ import (
 	"github.com/ilyas/mutqin-api/internal/repo"
 )
 
-func ptrString(s string) *string { return &s }
+func ptrString(s string) *string     { return &s }
 func ptrUUID(u uuid.UUID) *uuid.UUID { return &u }
 
 func TestUserRepo_CreateAndGetByID(t *testing.T) {

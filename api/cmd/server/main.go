@@ -80,9 +80,10 @@ func main() {
 		os.Exit(1)
 	}
 
-	// App handle — non-superuser, RLS-subject. TenantHook installed for
-	// defense-in-depth alongside per-model BeforeSelect hooks.
-	appDB, err := db.NewDB(ctx, cfg.AppDatabaseURL, false, db.TenantHook{})
+	// App handle — non-superuser, RLS-subject. Per-model hooks via
+	// model.TenantScoped inject organization_id filters when ctx has a tenant;
+	// Postgres RLS enforces at the storage layer regardless.
+	appDB, err := db.NewDB(ctx, cfg.AppDatabaseURL, false)
 	if err != nil {
 		slog.Error("connect app database", "error", err)
 		os.Exit(1)
