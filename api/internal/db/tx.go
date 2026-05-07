@@ -1,30 +1,22 @@
+// api/internal/db/tx.go
 package db
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 
-	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/uptrace/bun"
 )
 
-// RunTx executes fn inside a database transaction. If fn returns an error the
-// transaction is rolled back; otherwise it is committed. Rollback errors during
-// error handling are silently discarded so the original error is preserved.
-func RunTx(ctx context.Context, pool *pgxpool.Pool, fn func(tx pgx.Tx) error) error {
-	tx, err := pool.Begin(ctx)
-	if err != nil {
-		return fmt.Errorf("begin transaction: %w", err)
-	}
-
-	if err := fn(tx); err != nil {
-		_ = tx.Rollback(ctx)
-		return err
-	}
-
-	if err := tx.Commit(ctx); err != nil {
-		return fmt.Errorf("commit transaction: %w", err)
-	}
-
-	return nil
+// RunInTx executes fn inside a database transaction. The transaction commits on
+// nil return; rolls back on error. Repo methods accept bun.IDB so they work
+// against either *bun.DB or bun.Tx.
+func RunInTx(ctx context.Context, db *bun.DB, fn func(ctx context.Context, tx bun.Tx) error) error {
+	return db.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
+		if err := fn(ctx, tx); err != nil {
+			return fmt.Errorf("tx fn: %w", err)
+		}
+		return nil
+	})
 }
