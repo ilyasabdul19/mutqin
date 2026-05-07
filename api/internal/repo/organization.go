@@ -66,3 +66,12 @@ func (r *OrganizationRepo) List(ctx context.Context, limit, offset int) ([]model
 	}
 	return orgs, nil
 }
+
+// GetBySlugAdmin looks up an organization by slug WITHOUT a tenant in ctx.
+// This is the entry point for the tenant-resolution chain: the request arrives,
+// we extract the slug from Host or X-Tenant-Slug, and we need the UUID before
+// we can populate the tenant ctx. Equivalent in behavior to GetBySlug; the
+// distinct name flags it as an intentional cross-tenant call site.
+func (r *OrganizationRepo) GetBySlugAdmin(ctx context.Context, slug string) (*model.Organization, error) {
+	return r.GetBySlug(ctx, slug)
+}
