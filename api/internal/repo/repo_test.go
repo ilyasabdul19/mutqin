@@ -20,6 +20,18 @@ import (
 
 var testDB *bun.DB
 
+// truncateAll empties every tenant-bearing table. Tests should call it via
+// t.Cleanup so each test sees a known-empty database without depending on
+// hand-picked unique slugs or emails.
+func truncateAll(t *testing.T) {
+	t.Helper()
+	_, err := testDB.ExecContext(context.Background(),
+		`TRUNCATE TABLE otp_codes, invites, users, organizations RESTART IDENTITY CASCADE`)
+	if err != nil {
+		t.Fatalf("truncate: %v", err)
+	}
+}
+
 func TestMain(m *testing.M) {
 	ctx := context.Background()
 

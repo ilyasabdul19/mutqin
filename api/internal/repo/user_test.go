@@ -16,11 +16,12 @@ func ptrString(s string) *string { return &s }
 func ptrUUID(u uuid.UUID) *uuid.UUID { return &u }
 
 func TestUserRepo_CreateAndGetByID(t *testing.T) {
+	t.Cleanup(func() { truncateAll(t) })
 	ctx := context.Background()
 	orgRepo := repo.NewOrganizationRepo(testDB)
 	userRepo := repo.NewUserRepo(testDB)
 
-	org := &model.Organization{Name: "User Org A", Slug: "user-org-a", Country: "SO", Tier: "free", Status: "active"}
+	org := &model.Organization{Name: "Org A", Slug: "org-a", Country: "SO", Tier: "free", Status: "active"}
 	if err := orgRepo.Create(ctx, org); err != nil {
 		t.Fatalf("create org: %v", err)
 	}
@@ -50,11 +51,12 @@ func TestUserRepo_CreateAndGetByID(t *testing.T) {
 }
 
 func TestUserRepo_GetByEmail(t *testing.T) {
+	t.Cleanup(func() { truncateAll(t) })
 	ctx := context.Background()
 	orgRepo := repo.NewOrganizationRepo(testDB)
 	userRepo := repo.NewUserRepo(testDB)
 
-	org := &model.Organization{Name: "User Org B", Slug: "user-org-b", Country: "SO", Tier: "free", Status: "active"}
+	org := &model.Organization{Name: "Org B", Slug: "org-b", Country: "SO", Tier: "free", Status: "active"}
 	if err := orgRepo.Create(ctx, org); err != nil {
 		t.Fatalf("create org: %v", err)
 	}
@@ -81,6 +83,7 @@ func TestUserRepo_GetByEmail(t *testing.T) {
 }
 
 func TestUserRepo_GetByID_NotFound(t *testing.T) {
+	t.Cleanup(func() { truncateAll(t) })
 	ctx := context.Background()
 	userRepo := repo.NewUserRepo(testDB)
 

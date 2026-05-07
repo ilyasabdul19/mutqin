@@ -13,12 +13,13 @@ import (
 )
 
 func TestOrganizationRepo_CreateAndGet(t *testing.T) {
+	t.Cleanup(func() { truncateAll(t) })
 	ctx := context.Background()
 	r := repo.NewOrganizationRepo(testDB)
 
 	org := &model.Organization{
 		Name:    "Markaz Al-Falah",
-		Slug:    "al-falah-create-get",
+		Slug:    "al-falah",
 		Country: "SO",
 		Tier:    "free",
 		Status:  "active",
@@ -34,18 +35,19 @@ func TestOrganizationRepo_CreateAndGet(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetByID: %v", err)
 	}
-	if got.Slug != "al-falah-create-get" {
-		t.Fatalf("want slug al-falah-create-get, got %s", got.Slug)
+	if got.Slug != "al-falah" {
+		t.Fatalf("want slug al-falah, got %s", got.Slug)
 	}
 }
 
 func TestOrganizationRepo_GetBySlug(t *testing.T) {
+	t.Cleanup(func() { truncateAll(t) })
 	ctx := context.Background()
 	r := repo.NewOrganizationRepo(testDB)
 
 	org := &model.Organization{
 		Name:    "Markaz Noor",
-		Slug:    "noor-get-by-slug",
+		Slug:    "noor",
 		Country: "SO",
 		Tier:    "free",
 		Status:  "active",
@@ -54,7 +56,7 @@ func TestOrganizationRepo_GetBySlug(t *testing.T) {
 		t.Fatalf("Create: %v", err)
 	}
 
-	got, err := r.GetBySlug(ctx, "noor-get-by-slug")
+	got, err := r.GetBySlug(ctx, "noor")
 	if err != nil {
 		t.Fatalf("GetBySlug: %v", err)
 	}
@@ -64,6 +66,7 @@ func TestOrganizationRepo_GetBySlug(t *testing.T) {
 }
 
 func TestOrganizationRepo_GetByID_NotFound(t *testing.T) {
+	t.Cleanup(func() { truncateAll(t) })
 	ctx := context.Background()
 	r := repo.NewOrganizationRepo(testDB)
 
@@ -74,10 +77,11 @@ func TestOrganizationRepo_GetByID_NotFound(t *testing.T) {
 }
 
 func TestOrganizationRepo_List(t *testing.T) {
+	t.Cleanup(func() { truncateAll(t) })
 	ctx := context.Background()
 	r := repo.NewOrganizationRepo(testDB)
 
-	for i, slug := range []string{"list-a", "list-b", "list-c"} {
+	for _, slug := range []string{"list-a", "list-b", "list-c"} {
 		org := &model.Organization{
 			Name:    "List Org " + slug,
 			Slug:    slug,
@@ -85,7 +89,6 @@ func TestOrganizationRepo_List(t *testing.T) {
 			Tier:    "free",
 			Status:  "active",
 		}
-		_ = i
 		if err := r.Create(ctx, org); err != nil {
 			t.Fatalf("Create %s: %v", slug, err)
 		}
@@ -95,7 +98,7 @@ func TestOrganizationRepo_List(t *testing.T) {
 	if err != nil {
 		t.Fatalf("List: %v", err)
 	}
-	if len(got) < 3 {
-		t.Fatalf("want at least 3 orgs, got %d", len(got))
+	if len(got) != 3 {
+		t.Fatalf("want exactly 3 orgs after isolated test, got %d", len(got))
 	}
 }
