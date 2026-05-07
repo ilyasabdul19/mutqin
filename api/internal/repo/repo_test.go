@@ -30,7 +30,7 @@ var (
 func truncateAll(t *testing.T) {
 	t.Helper()
 	_, err := testAdmin.ExecContext(context.Background(),
-		`TRUNCATE TABLE otp_codes, invites, users, organizations RESTART IDENTITY CASCADE`)
+		`TRUNCATE TABLE otp_codes, invites, users, registrations, organizations RESTART IDENTITY CASCADE`)
 	if err != nil {
 		t.Fatalf("truncate: %v", err)
 	}
