@@ -1,0 +1,7 @@
+{{ define "title" }}Submitted — {{ .Org.Name }}{{ end }}
+
+{{ define "content" }}
+<h1>Thank you</h1>
+<p>{{ .Org.Name }} has received the registration for <strong>{{ .ChildName }}</strong>. The center will contact you to confirm.</p>
+<a class="cta" href="/{{ .Org.Slug }}">Back to {{ .Org.Name }}</a>
+{{ end }}
