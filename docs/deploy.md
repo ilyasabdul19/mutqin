@@ -21,39 +21,44 @@ cd src
 
 ## Required env vars
 
-Create `/opt/mutqin/.env`:
+Create `/opt/mutqin/.env` (loaded by docker compose via `--env-file`):
 
 ```
-DATABASE_URL=postgres://mutqin:<strongpw>@db:5432/mutqin?sslmode=disable
-APP_DATABASE_URL=postgres://mutqin_app:<strongpw_app>@db:5432/mutqin?sslmode=disable
+POSTGRES_PASSWORD=<strongpw>
+APP_DB_PASSWORD=<strongpw_app>
 JWT_SECRET=<long-random>
 BASE_HOST=mutqin.app
 CF_DNS_API_TOKEN=<cloudflare token>
 ACME_EMAIL=ops@mutqin.app
 ```
 
-(`BASE_HOST` differs from local: tenant subdomains resolve via `*.mutqin.app` instead of `*.localhost`.)
+(`BASE_HOST` differs from local: tenant subdomains resolve via `*.mutqin.app` instead of `*.localhost`. The DSNs in `docker-compose.prod.yml` interpolate `POSTGRES_PASSWORD` and `APP_DB_PASSWORD` automatically.)
 
 ## Production compose overrides
 
-Use `docker-compose.prod.yml` (TODO — Plan F adds this) to override:
-- The traefik volume mount → `infra/traefik/traefik.prod.yml`
-- An additional volume `letsencrypt:/letsencrypt` for ACME persistence
-- Open port `443` in addition to `80`
+`docker-compose.prod.yml` overlays the local compose with production-specific values:
+- Pins `api`, `landing`, `web` to images from the GitLab Container Registry (no in-place builds).
+- Mounts `infra/traefik/traefik.prod.yml` as the Traefik config.
+- Opens port 443 and adds a `letsencrypt` named volume for ACME state persistence.
+- Loads passwords + tokens from `/opt/mutqin/.env`.
 
-Until Plan F lands, you can manually adjust `docker-compose.yml` on the host or run a one-line override:
+Bring the stack up with both files:
 
 ```sh
-docker run -d --name mutqin-traefik \
-  --network mutqin \
-  -p 80:80 -p 443:443 \
-  -v /var/run/docker.sock:/var/run/docker.sock:ro \
-  -v $(pwd)/infra/traefik/traefik.prod.yml:/etc/traefik/traefik.yml:ro \
-  -v /opt/mutqin/letsencrypt:/letsencrypt \
-  -e CF_DNS_API_TOKEN=$CF_DNS_API_TOKEN \
-  -e ACME_EMAIL=$ACME_EMAIL \
-  traefik:v3.1
+cd /opt/mutqin/src
+docker compose \
+  -f docker-compose.yml \
+  -f docker-compose.prod.yml \
+  --env-file /opt/mutqin/.env \
+  pull
+docker compose \
+  -f docker-compose.yml \
+  -f docker-compose.prod.yml \
+  --env-file /opt/mutqin/.env \
+  up -d
 ```
+
+The `deploy:vps` job in `.gitlab-ci.yml` runs the same commands automatically when a commit lands on `main`.
 
 ## First TLS issuance
 
