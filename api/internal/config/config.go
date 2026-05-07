@@ -9,9 +9,12 @@ import (
 
 // Config holds all configuration values loaded from environment variables.
 type Config struct {
-	DatabaseURL string
-	JWTSecret   string
-	Port        string
+	DatabaseURL    string
+	AppDatabaseURL string
+	JWTSecret      string
+	Port           string
+
+	BaseHost string
 
 	SMTPHost string
 	SMTPPort string
@@ -50,6 +53,15 @@ func Load() (*Config, error) {
 		R2AccessKey: os.Getenv("R2_ACCESS_KEY"),
 		R2SecretKey: os.Getenv("R2_SECRET_KEY"),
 		R2Bucket:    os.Getenv("R2_BUCKET"),
+	}
+
+	cfg.AppDatabaseURL = os.Getenv("APP_DATABASE_URL")
+	if cfg.AppDatabaseURL == "" {
+		cfg.AppDatabaseURL = cfg.DatabaseURL
+	}
+	cfg.BaseHost = os.Getenv("BASE_HOST")
+	if cfg.BaseHost == "" {
+		cfg.BaseHost = "mutqin.app"
 	}
 
 	if cfg.DatabaseURL == "" {

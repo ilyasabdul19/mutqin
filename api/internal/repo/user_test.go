@@ -12,14 +12,16 @@ import (
 	"github.com/ilyas/mutqin-api/internal/repo"
 )
 
-func ptrString(s string) *string { return &s }
+func ptrString(s string) *string     { return &s }
 func ptrUUID(u uuid.UUID) *uuid.UUID { return &u }
 
 func TestUserRepo_CreateAndGetByID(t *testing.T) {
 	t.Cleanup(func() { truncateAll(t) })
 	ctx := context.Background()
-	orgRepo := repo.NewOrganizationRepo(testDB)
-	userRepo := repo.NewUserRepo(testDB)
+	// users is RLS-subject; setup uses testAdmin (superuser bypass) so we
+	// don't need a tenant in ctx just to seed fixtures.
+	orgRepo := repo.NewOrganizationRepo(testAdmin)
+	userRepo := repo.NewUserRepo(testAdmin)
 
 	org := &model.Organization{Name: "Org A", Slug: "org-a", Country: "SO", Tier: "free", Status: "active"}
 	if err := orgRepo.Create(ctx, org); err != nil {
@@ -53,8 +55,10 @@ func TestUserRepo_CreateAndGetByID(t *testing.T) {
 func TestUserRepo_GetByEmail(t *testing.T) {
 	t.Cleanup(func() { truncateAll(t) })
 	ctx := context.Background()
-	orgRepo := repo.NewOrganizationRepo(testDB)
-	userRepo := repo.NewUserRepo(testDB)
+	// users is RLS-subject; setup uses testAdmin (superuser bypass) so we
+	// don't need a tenant in ctx just to seed fixtures.
+	orgRepo := repo.NewOrganizationRepo(testAdmin)
+	userRepo := repo.NewUserRepo(testAdmin)
 
 	org := &model.Organization{Name: "Org B", Slug: "org-b", Country: "SO", Tier: "free", Status: "active"}
 	if err := orgRepo.Create(ctx, org); err != nil {
@@ -85,7 +89,8 @@ func TestUserRepo_GetByEmail(t *testing.T) {
 func TestUserRepo_GetByID_NotFound(t *testing.T) {
 	t.Cleanup(func() { truncateAll(t) })
 	ctx := context.Background()
-	userRepo := repo.NewUserRepo(testDB)
+	// No rows to find; admin handle keeps us out of RLS-empty-result territory.
+	userRepo := repo.NewUserRepo(testAdmin)
 
 	_, err := userRepo.GetByID(ctx, uuid.New())
 	if !errors.Is(err, repo.ErrNotFound) {

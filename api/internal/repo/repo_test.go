@@ -3,6 +3,7 @@ package repo_test
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 	"testing"
@@ -18,14 +19,17 @@ import (
 	_ "github.com/ilyas/mutqin-api/internal/migrate/migrations"
 )
 
-var testDB *bun.DB
+var (
+	testDB    *bun.DB // mutqin_app connection — RLS-subject. Per-model TenantScoped hooks fire automatically.
+	testAdmin *bun.DB // mutqin superuser — no RLS (used by truncateAll and admin/setup lookups).
+)
 
 // truncateAll empties every tenant-bearing table. Tests should call it via
-// t.Cleanup so each test sees a known-empty database without depending on
-// hand-picked unique slugs or emails.
+// t.Cleanup so each test sees a known-empty database. Uses the admin handle so
+// it bypasses RLS.
 func truncateAll(t *testing.T) {
 	t.Helper()
-	_, err := testDB.ExecContext(context.Background(),
+	_, err := testAdmin.ExecContext(context.Background(),
 		`TRUNCATE TABLE otp_codes, invites, users, organizations RESTART IDENTITY CASCADE`)
 	if err != nil {
 		t.Fatalf("truncate: %v", err)
@@ -55,21 +59,35 @@ func TestMain(m *testing.M) {
 		}
 	}()
 
-	dsn, err := pgC.ConnectionString(ctx, "sslmode=disable")
+	host, err := pgC.Host(ctx)
 	if err != nil {
-		log.Fatalf("get connection string: %v", err)
+		log.Fatalf("container host: %v", err)
+	}
+	port, err := pgC.MappedPort(ctx, "5432")
+	if err != nil {
+		log.Fatalf("container port: %v", err)
 	}
 
-	bdb, err := db.NewDB(ctx, dsn, false)
-	if err != nil {
-		log.Fatalf("connect bun: %v", err)
-	}
-	defer bdb.Close()
+	adminDSN := fmt.Sprintf("postgres://mutqin:mutqin@%s:%s/mutqin_test?sslmode=disable", host, port.Port())
+	appDSN := fmt.Sprintf("postgres://mutqin_app:mutqin_app@%s:%s/mutqin_test?sslmode=disable", host, port.Port())
 
-	if err := migrate.Up(ctx, bdb); err != nil {
+	admin, err := db.NewDB(ctx, adminDSN, false)
+	if err != nil {
+		log.Fatalf("connect admin: %v", err)
+	}
+	defer admin.Close()
+	testAdmin = admin
+
+	if err := migrate.Up(ctx, admin); err != nil {
 		log.Fatalf("apply migrations: %v", err)
 	}
 
-	testDB = bdb
+	app, err := db.NewDB(ctx, appDSN, false)
+	if err != nil {
+		log.Fatalf("connect app: %v", err)
+	}
+	defer app.Close()
+	testDB = app
+
 	os.Exit(m.Run())
 }

@@ -13,17 +13,21 @@ import (
 	"github.com/uptrace/bun/extra/bundebug"
 )
 
-// NewDB opens a Bun DB backed by pgdriver, verifies connectivity, and returns
-// the handle. The caller is responsible for closing it.
+// NewDB opens a Bun DB backed by pgdriver, verifies connectivity, installs the
+// supplied query hooks, and returns the handle. The caller is responsible for
+// closing it.
 //
 // debug=true installs bundebug to log every query — only enable in development.
-func NewDB(ctx context.Context, databaseURL string, debug bool) (*bun.DB, error) {
+func NewDB(ctx context.Context, databaseURL string, debug bool, hooks ...bun.QueryHook) (*bun.DB, error) {
 	sqldb := sql.OpenDB(pgdriver.NewConnector(pgdriver.WithDSN(databaseURL)))
 	sqldb.SetMaxOpenConns(20)
 	sqldb.SetMaxIdleConns(5)
 	sqldb.SetConnMaxLifetime(30 * time.Minute)
 
 	bdb := bun.NewDB(sqldb, pgdialect.New())
+	for _, h := range hooks {
+		bdb.AddQueryHook(h)
+	}
 	if debug {
 		bdb.AddQueryHook(bundebug.NewQueryHook(bundebug.WithVerbose(true)))
 	}
