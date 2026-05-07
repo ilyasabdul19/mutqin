@@ -10,6 +10,7 @@ import (
 
 type Invite struct {
 	bun.BaseModel `bun:"table:invites,alias:i"`
+	TenantScoped  `bun:"-"`
 
 	ID             uuid.UUID  `bun:"id,pk,type:uuid,nullzero,default:gen_random_uuid()"`
 	OrganizationID uuid.UUID  `bun:"organization_id,notnull,type:uuid"`

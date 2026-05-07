@@ -20,8 +20,9 @@ import (
 )
 
 var (
-	testDB    *bun.DB // mutqin_app connection — RLS-subject, TenantHook installed
-	testAdmin *bun.DB // mutqin superuser — no RLS, no hook (used by truncateAll and admin lookups)
+	testDB          *bun.DB // mutqin_app connection — RLS-subject, TenantHook installed
+	testAdmin       *bun.DB // mutqin superuser — no RLS, no hook (used by truncateAll and admin lookups)
+	testAdminHooked *bun.DB // mutqin superuser with TenantHook — exercises the hook without RLS
 )
 
 // truncateAll empties every tenant-bearing table. Tests should call it via
@@ -88,6 +89,13 @@ func TestMain(m *testing.M) {
 	}
 	defer app.Close()
 	testDB = app
+
+	adminHooked, err := db.NewDB(ctx, adminDSN, false, db.TenantHook{})
+	if err != nil {
+		log.Fatalf("connect admin (hooked): %v", err)
+	}
+	defer adminHooked.Close()
+	testAdminHooked = adminHooked
 
 	os.Exit(m.Run())
 }

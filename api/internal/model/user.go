@@ -10,6 +10,7 @@ import (
 
 type User struct {
 	bun.BaseModel `bun:"table:users,alias:u"`
+	TenantScoped  `bun:"-"`
 
 	ID             uuid.UUID  `bun:"id,pk,type:uuid,nullzero,default:gen_random_uuid()"`
 	Phone          *string    `bun:"phone"`
