@@ -1,0 +1,57 @@
+# infra/traefik/traefik.prod.yml
+# Production Traefik static configuration. Used in deploy by swapping the
+# volume mount of /etc/traefik/traefik.yml to point here.
+#
+# Required env vars at runtime (set on the traefik container):
+#   CF_DNS_API_TOKEN  — Cloudflare API token with Zone:DNS:Edit on the domain
+#   ACME_EMAIL        — contact email Let's Encrypt records on the issued cert
+
+api:
+  dashboard: true
+  # Dashboard not exposed on a public entrypoint in prod — reach it via SSH tunnel
+  # to localhost:8080 inside the host. To expose via Traefik later, add a basic-auth
+  # middleware and a router with hostname binding.
+  insecure: false
+
+entryPoints:
+  web:
+    address: ":80"
+    http:
+      redirections:
+        entryPoint:
+          to: websecure
+          scheme: https
+          permanent: true
+  websecure:
+    address: ":443"
+    http:
+      tls:
+        certResolver: le
+        domains:
+          - main: "mutqin.app"
+            sans:
+              - "*.mutqin.app"
+
+certificatesResolvers:
+  le:
+    acme:
+      email: "${ACME_EMAIL}"
+      storage: /letsencrypt/acme.json
+      dnsChallenge:
+        provider: cloudflare
+        delayBeforeCheck: 10
+        resolvers:
+          - "1.1.1.1:53"
+          - "8.8.8.8:53"
+
+providers:
+  docker:
+    exposedByDefault: false
+    network: mutqin
+
+log:
+  level: INFO
+  format: json
+
+accessLog:
+  format: json
