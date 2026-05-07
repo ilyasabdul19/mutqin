@@ -1,0 +1,23 @@
+# infra/traefik/traefik.yml
+# Traefik static configuration. Local dev only — HTTP entrypoint, no TLS.
+# Plan D will introduce a websecure entrypoint and ACME-issued wildcard cert.
+
+api:
+  dashboard: true
+  insecure: true   # exposes the dashboard on the API entrypoint without auth — fine for local
+
+entryPoints:
+  web:
+    address: ":80"
+
+providers:
+  docker:
+    exposedByDefault: false
+    network: mutqin
+
+log:
+  level: INFO
+  format: json
+
+accessLog:
+  format: json
