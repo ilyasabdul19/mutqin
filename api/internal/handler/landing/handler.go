@@ -3,6 +3,7 @@ package landing
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"html/template"
@@ -13,6 +14,7 @@ import (
 	"strings"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/uptrace/bun"
 
 	"github.com/ilyas/mutqin-api/internal/model"
 	"github.com/ilyas/mutqin-api/internal/repo"
@@ -28,7 +30,7 @@ type OrgLookup interface {
 // Handler bundles the dependencies for landing routes.
 type Handler struct {
 	orgs   OrgLookup
-	regs   *repo.RegistrationRepo
+	appDB  *bun.DB // app_role connection — used to wrap RLS-subject INSERTs in a SET LOCAL transaction.
 	tmpls  map[string]*template.Template
 	static fs.FS
 	logger *slog.Logger
@@ -37,7 +39,11 @@ type Handler struct {
 // New constructs a Handler. Each page template is parsed together with the
 // shared layout so executing layout against that page-specific set picks up
 // the page's content/title block overrides.
-func New(orgs OrgLookup, regs *repo.RegistrationRepo, logger *slog.Logger) (*Handler, error) {
+//
+// appDB is the mutqin_app (RLS-subject) handle. Submit handlers wrap their
+// INSERT in a transaction and run SET LOCAL app.current_tenant before the
+// repo call so RLS policies pass.
+func New(orgs OrgLookup, appDB *bun.DB, logger *slog.Logger) (*Handler, error) {
 	pages := []string{
 		"center.html.tmpl",
 		"register.html.tmpl",
@@ -54,7 +60,7 @@ func New(orgs OrgLookup, regs *repo.RegistrationRepo, logger *slog.Logger) (*Han
 	}
 	return &Handler{
 		orgs:   orgs,
-		regs:   regs,
+		appDB:  appDB,
 		tmpls:  tmpls,
 		static: Static(),
 		logger: logger,
@@ -159,7 +165,16 @@ func (h *Handler) submitRegistration(w http.ResponseWriter, r *http.Request) {
 	if v := strings.TrimSpace(r.PostForm.Get("hifz_level")); v != "" {
 		reg.HifzLevel = &v
 	}
-	if err := h.regs.Create(ctx, reg); err != nil {
+	// Insert under RLS — wrap in a transaction so SET LOCAL app.current_tenant
+	// applies for the lifetime of this single statement and the policy passes.
+	err := h.appDB.RunInTx(ctx, &sql.TxOptions{}, func(txCtx context.Context, tx bun.Tx) error {
+		if _, err := tx.ExecContext(txCtx,
+			"SELECT set_config('app.current_tenant', ?, true)", org.ID.String()); err != nil {
+			return err
+		}
+		return repo.NewRegistrationRepo(tx).Create(txCtx, reg)
+	})
+	if err != nil {
 		h.logger.Error("registration create", "slug", slug, "error", err)
 		http.Error(w, "could not save registration", http.StatusInternalServerError)
 		return

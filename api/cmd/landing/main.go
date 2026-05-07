@@ -16,6 +16,7 @@ import (
 	"github.com/ilyas/mutqin-api/internal/db"
 	"github.com/ilyas/mutqin-api/internal/handler/landing"
 	"github.com/ilyas/mutqin-api/internal/middleware"
+	"github.com/ilyas/mutqin-api/internal/migrate"
 	_ "github.com/ilyas/mutqin-api/internal/migrate/migrations"
 	"github.com/ilyas/mutqin-api/internal/repo"
 )
@@ -35,7 +36,8 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	// Admin handle for cross-tenant slug lookup.
+	// Admin handle for cross-tenant slug lookup AND for running migrations on
+	// startup (Lock() coordinates with the api binary if both run concurrently).
 	adminDB, err := db.NewDB(ctx, cfg.DatabaseURL, false)
 	if err != nil {
 		slog.Error("connect admin database", "error", err)
@@ -43,7 +45,13 @@ func main() {
 	}
 	defer adminDB.Close()
 
-	// App handle for INSERTs into RLS-subject tables (registrations).
+	if err := migrate.Up(ctx, adminDB); err != nil {
+		slog.Error("apply migrations on startup", "error", err)
+		os.Exit(1)
+	}
+
+	// App handle for INSERTs into RLS-subject tables (registrations). Connects
+	// AFTER migrations have run so the mutqin_app role definitely exists.
 	appDB, err := db.NewDB(ctx, cfg.AppDatabaseURL, false)
 	if err != nil {
 		slog.Error("connect app database", "error", err)
@@ -52,25 +60,23 @@ func main() {
 	defer appDB.Close()
 
 	orgRepo := repo.NewOrganizationRepo(adminDB)
-	regRepo := repo.NewRegistrationRepo(appDB)
 
-	handler, err := landing.New(orgRepo, regRepo, logger)
+	handler, err := landing.New(orgRepo, appDB, logger)
 	if err != nil {
 		slog.Error("init landing handler", "error", err)
 		os.Exit(1)
 	}
 
-	// Middleware chain: request_id → logger → RLSContext → routes.
-	// Tenant ctx is set INSIDE the handler (slug from path, not Host), so the
-	// HTTP-level tenant resolver does not apply here. RLSContext picks up the
-	// tenant from ctx (set by the handler) and runs SET LOCAL for the duration
-	// of the request. Routes that don't carry a tenant (like /static/*) flow
-	// through unchanged.
+	// Middleware chain: request_id → logger → routes.
+	// Tenant ctx + RLS context are set INSIDE the submit handler — it wraps
+	// the INSERT in a transaction with SET LOCAL app.current_tenant. The
+	// HTTP-level tenant resolver / RLSContext middlewares are not used here
+	// because the slug comes from the URL path, not the Host header, and the
+	// landing routes are public (no auth) so per-request DB transactions are
+	// only needed on writes.
 	chain := middleware.RequestID(
 		middleware.Logger(logger)(
-			middleware.RLSContext(middleware.NewBunRunner(appDB))(
-				handler.Routes(),
-			),
+			handler.Routes(),
 		),
 	)
 
