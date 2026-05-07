@@ -19,6 +19,7 @@ import (
 	"github.com/ilyas/mutqin-api/internal/db"
 	"github.com/ilyas/mutqin-api/internal/handler"
 	"github.com/ilyas/mutqin-api/internal/middleware"
+	_ "github.com/ilyas/mutqin-api/internal/migrate/migrations"
 )
 
 func main() {
