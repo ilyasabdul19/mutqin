@@ -11,16 +11,16 @@ import (
 type Organization struct {
 	bun.BaseModel `bun:"table:organizations,alias:o"`
 
-	ID          uuid.UUID  `bun:"id,pk,type:uuid,default:gen_random_uuid()"`
+	ID          uuid.UUID  `bun:"id,pk,type:uuid,nullzero,default:gen_random_uuid()"`
 	Name        string     `bun:"name,notnull"`
 	Slug        string     `bun:"slug,notnull,unique"`
 	City        *string    `bun:"city"`
-	Country     string     `bun:"country,notnull,default:'SO'"`
-	Tier        string     `bun:"tier,notnull,default:'free'"`
-	Status      string     `bun:"status,notnull,default:'active'"`
+	Country     string     `bun:"country,notnull,nullzero,default:'SO'"`
+	Tier        string     `bun:"tier,notnull,nullzero,default:'free'"`
+	Status      string     `bun:"status,notnull,nullzero,default:'active'"`
 	LogoURL     *string    `bun:"logo_url"`
 	Description *string    `bun:"description"`
 	Schedule    []byte     `bun:"schedule,type:jsonb"`
-	CreatedAt   time.Time  `bun:"created_at,notnull,default:now()"`
-	UpdatedAt   time.Time  `bun:"updated_at,notnull,default:now()"`
+	CreatedAt   time.Time  `bun:"created_at,notnull,nullzero,default:now()"`
+	UpdatedAt   time.Time  `bun:"updated_at,notnull,nullzero,default:now()"`
 }
