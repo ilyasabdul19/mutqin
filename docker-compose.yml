@@ -50,9 +50,29 @@ services:
     labels:
       - traefik.enable=true
       - traefik.docker.network=mutqin
+      # API router — matches /api on any host. Higher priority than web so the
+      # path prefix wins over web's catch-all.
       - traefik.http.routers.api.rule=PathPrefix(`/api`)
       - traefik.http.routers.api.entrypoints=web
+      - traefik.http.routers.api.priority=100
       - traefik.http.services.api.loadbalancer.server.port=8080
+    networks:
+      - mutqin
+
+  web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+    image: mutqin-web:dev
+    container_name: mutqin-web
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=mutqin
+      # Web router — matches everything else. Lower priority than api.
+      - traefik.http.routers.web.rule=PathPrefix(`/`)
+      - traefik.http.routers.web.entrypoints=web
+      - traefik.http.routers.web.priority=10
+      - traefik.http.services.web.loadbalancer.server.port=80
     networks:
       - mutqin
 
@@ -62,13 +82,14 @@ services:
     command:
       - --configFile=/etc/traefik/traefik.yml
     ports:
-      - "80:80"      # web entrypoint
-      - "8081:8080"  # dashboard (Traefik's API runs on 8080 inside the container)
+      - "80:80"
+      - "8081:8080"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./infra/traefik/traefik.yml:/etc/traefik/traefik.yml:ro
     depends_on:
       - api
+      - web
     networks:
       - mutqin
 
