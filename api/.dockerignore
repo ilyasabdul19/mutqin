@@ -1,0 +1,10 @@
+# api/.dockerignore
+.git
+.gitignore
+*.md
+bin/
+vendor/
+**/*_test.go
+**/testdata/
+.env
+.env.*

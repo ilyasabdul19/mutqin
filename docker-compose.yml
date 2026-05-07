@@ -10,6 +10,71 @@ services:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mutqin -d mutqin"]
+      interval: 2s
+      timeout: 2s
+      retries: 30
+    networks:
+      - mutqin
+
+  redis:
+    image: redis:7-alpine
+    container_name: mutqin-redis
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 2s
+      timeout: 1s
+      retries: 30
+    networks:
+      - mutqin
+
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    image: mutqin-api:dev
+    container_name: mutqin-api
+    environment:
+      DATABASE_URL: postgres://mutqin:mutqin@db:5432/mutqin?sslmode=disable
+      APP_DATABASE_URL: postgres://mutqin_app:mutqin_app@db:5432/mutqin?sslmode=disable
+      JWT_SECRET: dev-secret
+      BASE_HOST: localhost
+      PORT: "8080"
+    depends_on:
+      db:
+        condition: service_healthy
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=mutqin
+      - traefik.http.routers.api.rule=PathPrefix(`/api`)
+      - traefik.http.routers.api.entrypoints=web
+      - traefik.http.services.api.loadbalancer.server.port=8080
+    networks:
+      - mutqin
+
+  traefik:
+    image: traefik:v3.1
+    container_name: mutqin-traefik
+    command:
+      - --configFile=/etc/traefik/traefik.yml
+    ports:
+      - "80:80"      # web entrypoint
+      - "8081:8080"  # dashboard (Traefik's API runs on 8080 inside the container)
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./infra/traefik/traefik.yml:/etc/traefik/traefik.yml:ro
+    depends_on:
+      - api
+    networks:
+      - mutqin
 
 volumes:
   pgdata:
+
+networks:
+  mutqin:
+    name: mutqin
