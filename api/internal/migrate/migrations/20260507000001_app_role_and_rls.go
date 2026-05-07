@@ -37,11 +37,11 @@ func init() {
 			// Policy: only see rows whose organization_id matches the per-request
 			// app.current_tenant GUC. No tenant set => no rows visible.
 			`CREATE POLICY tenant_isolation ON users
-			   USING (organization_id = current_setting('app.current_tenant', true)::uuid)
-			   WITH CHECK (organization_id = current_setting('app.current_tenant', true)::uuid)`,
+			   USING (organization_id = NULLIF(current_setting('app.current_tenant', true), '')::uuid)
+			   WITH CHECK (organization_id = NULLIF(current_setting('app.current_tenant', true), '')::uuid)`,
 			`CREATE POLICY tenant_isolation ON invites
-			   USING (organization_id = current_setting('app.current_tenant', true)::uuid)
-			   WITH CHECK (organization_id = current_setting('app.current_tenant', true)::uuid)`,
+			   USING (organization_id = NULLIF(current_setting('app.current_tenant', true), '')::uuid)
+			   WITH CHECK (organization_id = NULLIF(current_setting('app.current_tenant', true), '')::uuid)`,
 		}
 		for _, q := range queries {
 			if _, err := db.ExecContext(ctx, q); err != nil {
