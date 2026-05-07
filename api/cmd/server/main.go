@@ -1,7 +1,9 @@
+// api/cmd/server/main.go
 package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -11,19 +13,22 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/golang-migrate/migrate/v4"
-	_ "github.com/golang-migrate/migrate/v4/database/postgres"
-	_ "github.com/golang-migrate/migrate/v4/source/file"
 
 	"github.com/ilyas/mutqin-api/internal/config"
 	"github.com/ilyas/mutqin-api/internal/db"
 	"github.com/ilyas/mutqin-api/internal/handler"
 	"github.com/ilyas/mutqin-api/internal/middleware"
+	"github.com/ilyas/mutqin-api/internal/migrate"
+	_ "github.com/ilyas/mutqin-api/internal/migrate/migrations"
 )
 
 func main() {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
 	slog.SetDefault(logger)
+
+	migrateUp := flag.Bool("migrate-up", false, "apply pending migrations and exit")
+	migrateDown := flag.Bool("migrate-down", false, "roll back the most recent migration group and exit")
+	flag.Parse()
 
 	cfg, err := config.Load()
 	if err != nil {
@@ -34,26 +39,36 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	// Run database migrations.
-	if err := runMigrations(cfg.DatabaseURL); err != nil {
-		slog.Error("failed to run migrations", "error", err)
-		os.Exit(1)
-	}
-	slog.Info("migrations applied successfully")
-
-	// Connect to database.
-	pool, err := db.NewPool(ctx, cfg.DatabaseURL)
+	bdb, err := db.NewDB(ctx, cfg.DatabaseURL, false)
 	if err != nil {
-		slog.Error("failed to connect to database", "error", err)
+		slog.Error("connect database", "error", err)
 		os.Exit(1)
 	}
-	defer pool.Close()
+	defer bdb.Close()
 	slog.Info("connected to database")
 
-	// Setup router.
+	switch {
+	case *migrateUp:
+		if err := migrate.Up(ctx, bdb); err != nil {
+			slog.Error("migrate up", "error", err)
+			os.Exit(1)
+		}
+		return
+	case *migrateDown:
+		if err := migrate.Down(ctx, bdb); err != nil {
+			slog.Error("migrate down", "error", err)
+			os.Exit(1)
+		}
+		return
+	}
+
+	if err := migrate.Up(ctx, bdb); err != nil {
+		slog.Error("apply migrations on startup", "error", err)
+		os.Exit(1)
+	}
+
 	r := chi.NewRouter()
 	r.Use(middleware.CORS)
-
 	r.Get("/api/v1/health", handler.Health())
 
 	srv := &http.Server{
@@ -65,7 +80,6 @@ func main() {
 		IdleTimeout:       60 * time.Second,
 	}
 
-	// Start server in a goroutine so we can listen for shutdown signals.
 	go func() {
 		slog.Info("server starting", "port", cfg.Port)
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
@@ -74,7 +88,6 @@ func main() {
 		}
 	}()
 
-	// Wait for interrupt signal.
 	<-ctx.Done()
 	slog.Info("shutting down server")
 
@@ -87,18 +100,4 @@ func main() {
 	}
 
 	slog.Info("server stopped")
-}
-
-func runMigrations(databaseURL string) error {
-	m, err := migrate.New("file://sql/migrations", databaseURL)
-	if err != nil {
-		return fmt.Errorf("create migrate instance: %w", err)
-	}
-	defer m.Close()
-
-	if err := m.Up(); err != nil && err != migrate.ErrNoChange {
-		return fmt.Errorf("run migrations: %w", err)
-	}
-
-	return nil
 }

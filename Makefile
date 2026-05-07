@@ -1,10 +1,11 @@
-.PHONY: dev build db-up db-down migrate-up migrate-down migrate-create sqlc test
+.PHONY: dev build db-up db-down migrate-up migrate-down test
 
 DOCKER ?= docker
 DATABASE_URL ?= postgres://mutqin:mutqin@localhost:5432/mutqin?sslmode=disable
+JWT_SECRET ?= dev-secret
 
 dev:
-	cd api && go run ./cmd/server
+	cd api && DATABASE_URL=$(DATABASE_URL) JWT_SECRET=$(JWT_SECRET) go run ./cmd/server
 
 build:
 	cd api && go build -o bin/server ./cmd/server
@@ -16,17 +17,10 @@ db-down:
 	$(DOCKER) compose down
 
 migrate-up:
-	migrate -path api/sql/migrations -database "$(DATABASE_URL)" up
+	cd api && DATABASE_URL=$(DATABASE_URL) JWT_SECRET=$(JWT_SECRET) go run ./cmd/server --migrate-up
 
 migrate-down:
-	migrate -path api/sql/migrations -database "$(DATABASE_URL)" down
-
-migrate-create:
-	@read -p "Migration name: " name; \
-	migrate create -ext sql -dir api/sql/migrations -seq $$name
-
-sqlc:
-	cd api/sql && sqlc generate
+	cd api && DATABASE_URL=$(DATABASE_URL) JWT_SECRET=$(JWT_SECRET) go run ./cmd/server --migrate-down
 
 test:
 	cd api && go test ./...
