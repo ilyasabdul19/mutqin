@@ -22,3 +22,6 @@ type User struct {
 	Language       string     `bun:"language,notnull,nullzero,default:'ar'"`
 	CreatedAt      time.Time  `bun:"created_at,notnull,nullzero,default:now()"`
 }
+
+// OrgID returns the user's organization id pointer (nil for super_admin).
+func (u *User) OrgID() *uuid.UUID { return u.OrganizationID }
