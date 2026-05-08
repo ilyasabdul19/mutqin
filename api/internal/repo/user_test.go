@@ -97,3 +97,25 @@ func TestUserRepo_GetByID_NotFound(t *testing.T) {
 		t.Fatalf("want ErrNotFound, got %v", err)
 	}
 }
+
+func TestUserRepo_GetByEmailGlobal_FindsAcrossTenants(t *testing.T) {
+	t.Cleanup(func() { truncateAll(t) })
+	ctx := context.Background()
+
+	orgA := &model.Organization{Name: "A", Slug: "global-a", Country: "SO", Tier: "free", Status: "active"}
+	if err := repo.NewOrganizationRepo(testAdmin).Create(ctx, orgA); err != nil {
+		t.Fatalf("create orgA: %v", err)
+	}
+	uA := &model.User{Name: "A", Email: ptrString("global-a@x"), Role: "teacher", OrganizationID: ptrUUID(orgA.ID), Status: "active", Language: "ar"}
+	if err := repo.NewUserRepo(testAdmin).Create(ctx, uA); err != nil {
+		t.Fatalf("create userA: %v", err)
+	}
+
+	got, err := repo.NewUserRepo(testAdmin).GetByEmailGlobal(ctx, "global-a@x")
+	if err != nil {
+		t.Fatalf("GetByEmailGlobal: %v", err)
+	}
+	if got.ID != uA.ID {
+		t.Fatalf("got id %s want %s", got.ID, uA.ID)
+	}
+}
