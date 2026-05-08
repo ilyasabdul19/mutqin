@@ -88,4 +88,32 @@ Let's Encrypt issues 90-day certs. Traefik auto-renews ~30 days before expiry. N
 0 3 * * * docker run --rm -v mutqin_pgdata:/data postgres:16-alpine pg_dump -U mutqin mutqin | gzip > /opt/backups/mutqin-$(date +\%F).sql.gz
 ```
 
-(Adjust path for your VPS. Cloudflare R2 sync is in Plan G alongside onboarding automation.)
+(Adjust path for your VPS. Cloudflare R2 sync is a separate follow-up.)
+
+## Onboarding a tenant
+
+When a new center is created, the operator (or a future Super Admin handler) must create a Cloudflare DNS record so the tenant's subdomain (`<slug>.mutqin.app`) routes to the VPS through Cloudflare's CDN.
+
+### Required env vars (in addition to the deploy ones above)
+
+```
+CF_DNS_API_TOKEN=<same token used for ACME — Zone:DNS:Edit on mutqin.app>
+CF_ZONE_ID=<the zone id; find via: GET https://api.cloudflare.com/client/v4/zones?name=mutqin.app>
+CF_RECORD_TARGET_IP=<VPS public IP>
+CF_RECORD_BASE_DOMAIN=mutqin.app  # default; override only for staging
+```
+
+### Run the onboard CLI
+
+Run as a one-shot from the host with the binary built locally:
+
+```sh
+cd /opt/mutqin/src/api
+CF_DNS_API_TOKEN=$CF_DNS_API_TOKEN CF_ZONE_ID=$CF_ZONE_ID CF_RECORD_TARGET_IP=$CF_RECORD_TARGET_IP \
+DATABASE_URL=$DATABASE_URL JWT_SECRET=$JWT_SECRET \
+  go run ./cmd/onboard --slug=<slug>
+```
+
+(`DATABASE_URL` and `JWT_SECRET` are required only because `config.Load()` validates them; the onboard binary itself doesn't touch the database.)
+
+Idempotency: if the record already exists, the CLI exits 0 with a `record already exists (no-op)` log line.
