@@ -30,6 +30,8 @@ type Config struct {
 	CFZoneID           string
 	CFRecordTargetIP   string
 	CFRecordBaseDomain string
+
+	JWTIssuer string
 }
 
 // Load reads a .env file (if present) and populates Config from environment
@@ -75,6 +77,11 @@ func Load() (*Config, error) {
 	cfg.CFRecordBaseDomain = os.Getenv("CF_RECORD_BASE_DOMAIN")
 	if cfg.CFRecordBaseDomain == "" {
 		cfg.CFRecordBaseDomain = "mutqin.app"
+	}
+
+	cfg.JWTIssuer = os.Getenv("JWT_ISSUER")
+	if cfg.JWTIssuer == "" {
+		cfg.JWTIssuer = "mutqin-api"
 	}
 
 	if cfg.DatabaseURL == "" {

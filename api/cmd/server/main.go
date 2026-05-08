@@ -15,13 +15,17 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 
+	"github.com/ilyas/mutqin-api/internal/auth"
 	"github.com/ilyas/mutqin-api/internal/config"
 	"github.com/ilyas/mutqin-api/internal/db"
+	"github.com/ilyas/mutqin-api/internal/email"
 	"github.com/ilyas/mutqin-api/internal/handler"
+	apihandler "github.com/ilyas/mutqin-api/internal/handler/api"
 	"github.com/ilyas/mutqin-api/internal/middleware"
 	"github.com/ilyas/mutqin-api/internal/migrate"
 	_ "github.com/ilyas/mutqin-api/internal/migrate/migrations"
 	"github.com/ilyas/mutqin-api/internal/repo"
+	"github.com/ilyas/mutqin-api/internal/service"
 )
 
 type orgLookupAdapter struct{ r *repo.OrganizationRepo }
@@ -95,14 +99,30 @@ func main() {
 
 	orgLookup := orgLookupAdapter{r: repo.NewOrganizationRepo(adminDB)}
 
+	// Auth wiring.
+	jwtIssuer := auth.NewIssuer([]byte(cfg.JWTSecret), cfg.JWTIssuer)
+	jwtVerifier := auth.NewVerifier([]byte(cfg.JWTSecret), cfg.JWTIssuer)
+	emailSender := email.NewLogSender() // swap to SMTP when RESEND_API_KEY lands
+	authSvc := service.NewAuthService(
+		repo.NewOtpRepo(adminDB),
+		repo.NewUserRepo(adminDB),
+		emailSender,
+		jwtIssuer,
+		24*time.Hour,
+	)
+	authH := apihandler.NewAuthHandler(authSvc)
+
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
 	r.Use(middleware.Logger(logger))
 	r.Use(middleware.CORS)
 	r.Use(middleware.Tenant(orgLookup, cfg.BaseHost))
+	r.Use(middleware.Auth(jwtVerifier))
 	r.Use(middleware.RLSContext(middleware.NewBunRunner(appDB)))
 
 	r.Get("/api/v1/health", handler.Health())
+	r.Post("/api/v1/auth/otp/request", authH.RequestOTP)
+	r.Post("/api/v1/auth/otp/verify", authH.VerifyOTP)
 
 	srv := &http.Server{
 		Addr:              fmt.Sprintf(":%s", cfg.Port),
