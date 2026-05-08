@@ -52,3 +52,18 @@ func (r *UserRepo) GetByEmail(ctx context.Context, email string) (*model.User, e
 	}
 	return u, nil
 }
+
+// GetByEmailGlobal looks up a user by email WITHOUT a tenant in ctx — used by
+// the login flow to find the user before the tenant is known. Caller must use
+// the admin handle (testAdmin in tests, adminDB in main).
+func (r *UserRepo) GetByEmailGlobal(ctx context.Context, email string) (*model.User, error) {
+	u := new(model.User)
+	err := r.db.NewSelect().Model(u).Where("email = ?", email).Scan(ctx)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, ErrNotFound
+	}
+	if err != nil {
+		return nil, fmt.Errorf("select user by email (global): %w", err)
+	}
+	return u, nil
+}
