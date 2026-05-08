@@ -25,6 +25,11 @@ type Config struct {
 	R2AccessKey string
 	R2SecretKey string
 	R2Bucket    string
+
+	CFAPIToken         string
+	CFZoneID           string
+	CFRecordTargetIP   string
+	CFRecordBaseDomain string
 }
 
 // Load reads a .env file (if present) and populates Config from environment
@@ -62,6 +67,14 @@ func Load() (*Config, error) {
 	cfg.BaseHost = os.Getenv("BASE_HOST")
 	if cfg.BaseHost == "" {
 		cfg.BaseHost = "mutqin.app"
+	}
+
+	cfg.CFAPIToken = os.Getenv("CF_DNS_API_TOKEN")
+	cfg.CFZoneID = os.Getenv("CF_ZONE_ID")
+	cfg.CFRecordTargetIP = os.Getenv("CF_RECORD_TARGET_IP")
+	cfg.CFRecordBaseDomain = os.Getenv("CF_RECORD_BASE_DOMAIN")
+	if cfg.CFRecordBaseDomain == "" {
+		cfg.CFRecordBaseDomain = "mutqin.app"
 	}
 
 	if cfg.DatabaseURL == "" {
