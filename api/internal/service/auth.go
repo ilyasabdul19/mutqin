@@ -28,6 +28,7 @@ type otpRepo interface {
 
 type userRepo interface {
 	GetByEmailGlobal(ctx context.Context, email string) (*model.User, error)
+	Update(ctx context.Context, u *model.User) error
 }
 
 type AuthService struct {
@@ -91,6 +92,14 @@ func (s *AuthService) VerifyOTP(ctx context.Context, emailAddr, code string) (st
 	u, err := s.users.GetByEmailGlobal(ctx, emailAddr)
 	if err != nil {
 		return "", fmt.Errorf("lookup user: %w", err)
+	}
+
+	// On first verify of a pending user (created via invite), activate them.
+	if u.Status == "pending" {
+		u.Status = "active"
+		if err := s.users.Update(ctx, u); err != nil {
+			return "", fmt.Errorf("activate user: %w", err)
+		}
 	}
 
 	tok, err := s.jwt.Sign(auth.Claims{
