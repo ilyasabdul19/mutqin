@@ -67,3 +67,24 @@ func (r *UserRepo) GetByEmailGlobal(ctx context.Context, email string) (*model.U
 	}
 	return u, nil
 }
+
+// Update updates a user record by ID. The status, name, role, and language
+// fields are mutable. Returns ErrNotFound if no row matched.
+func (r *UserRepo) Update(ctx context.Context, u *model.User) error {
+	res, err := r.db.NewUpdate().
+		Model(u).
+		Set("name = ?", u.Name).
+		Set("role = ?", u.Role).
+		Set("status = ?", u.Status).
+		Set("language = ?", u.Language).
+		Where("id = ?", u.ID).
+		Exec(ctx)
+	if err != nil {
+		return fmt.Errorf("update user: %w", err)
+	}
+	n, _ := res.RowsAffected()
+	if n == 0 {
+		return ErrNotFound
+	}
+	return nil
+}

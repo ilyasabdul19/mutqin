@@ -52,6 +52,14 @@ func (s *stubUserRepo) GetByEmailGlobal(_ context.Context, email string) (*model
 	return u, nil
 }
 
+func (s *stubUserRepo) Update(_ context.Context, u *model.User) error {
+	if existing, ok := s.users[*u.Email]; ok && existing.ID == u.ID {
+		s.users[*u.Email] = u
+		return nil
+	}
+	return repo.ErrNotFound
+}
+
 // --- tests ---
 
 func TestAuthService_RequestOTP_NewCodeStoredAndEmailed(t *testing.T) {
@@ -151,6 +159,25 @@ func TestAuthService_VerifyOTP_NoActiveCode(t *testing.T) {
 	svc := service.NewAuthService(otps, users, email.NewLogSender(), auth.NewIssuer([]byte("s"), "mutqin-api"), time.Hour)
 	if _, err := svc.VerifyOTP(context.Background(), "u@x", "123456"); !errors.Is(err, service.ErrInvalidOTP) {
 		t.Fatalf("want ErrInvalidOTP, got %v", err)
+	}
+}
+
+func TestAuthService_VerifyOTP_ActivatesPendingUser(t *testing.T) {
+	uid := uuid.New()
+	orgID := uuid.New()
+	users := &stubUserRepo{users: map[string]*model.User{
+		"u@x": {ID: uid, Email: ptrStr("u@x"), Role: "center_admin", OrganizationID: ptrUUID(orgID), Status: "pending"},
+	}}
+	plain, hash, _ := auth.GenerateOTP()
+	otps := &stubOtpRepo{consumed: &model.OtpCode{Email: "u@x", Code: hash}}
+	iss := auth.NewIssuer([]byte("s"), "mutqin-api")
+	svc := service.NewAuthService(otps, users, email.NewLogSender(), iss, time.Hour)
+
+	if _, err := svc.VerifyOTP(context.Background(), "u@x", plain); err != nil {
+		t.Fatalf("VerifyOTP: %v", err)
+	}
+	if users.users["u@x"].Status != "active" {
+		t.Fatalf("status=%s want active", users.users["u@x"].Status)
 	}
 }
 

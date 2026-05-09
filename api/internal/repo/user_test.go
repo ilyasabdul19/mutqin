@@ -119,3 +119,34 @@ func TestUserRepo_GetByEmailGlobal_FindsAcrossTenants(t *testing.T) {
 		t.Fatalf("got id %s want %s", got.ID, uA.ID)
 	}
 }
+
+func TestUserRepo_Update_Status(t *testing.T) {
+	t.Cleanup(func() { truncateAll(t) })
+	ctx := context.Background()
+
+	org := &model.Organization{Name: "U", Slug: "upd", Country: "SO", Tier: "free", Status: "active"}
+	if err := repo.NewOrganizationRepo(testAdmin).Create(ctx, org); err != nil {
+		t.Fatalf("create org: %v", err)
+	}
+	users := repo.NewUserRepo(testAdmin)
+	u := &model.User{
+		Name: "P", Email: ptrString("upd-p@x"), Role: "teacher",
+		OrganizationID: ptrUUID(org.ID), Status: "pending", Language: "ar",
+	}
+	if err := users.Create(ctx, u); err != nil {
+		t.Fatalf("create: %v", err)
+	}
+
+	u.Status = "active"
+	if err := users.Update(ctx, u); err != nil {
+		t.Fatalf("update: %v", err)
+	}
+
+	got, err := users.GetByID(ctx, u.ID)
+	if err != nil {
+		t.Fatalf("getbyid: %v", err)
+	}
+	if got.Status != "active" {
+		t.Fatalf("status=%s want active", got.Status)
+	}
+}
