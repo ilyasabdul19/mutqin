@@ -110,6 +110,38 @@ func TestInviteService_Generate_HappyPath(t *testing.T) {
 	}
 }
 
+func TestInviteService_GenerateForTeacher_HappyPath(t *testing.T) {
+	invs := &stubInviteRepo{}
+	users := &stubUserRepoFull{}
+	otps := &stubOtpRepo{}
+	es := email.NewLogSender()
+	audit := &stubAuditRepo{}
+
+	svc := service.NewInviteService(invs, users, otps, es, audit)
+
+	orgID := uuid.New()
+	creator := uuid.New()
+	inv, err := svc.GenerateForTeacher(context.Background(), creator, orgID)
+	if err != nil {
+		t.Fatalf("Generate: %v", err)
+	}
+	if inv.Token == "" {
+		t.Fatal("empty token")
+	}
+	if invs.created != inv {
+		t.Fatal("repo not called")
+	}
+	if inv.Role != "teacher" {
+		t.Fatalf("role=%s", inv.Role)
+	}
+	if inv.OrganizationID != orgID {
+		t.Fatalf("org_id mismatch")
+	}
+	if len(audit.logs) != 1 {
+		t.Fatalf("audit logs=%d want 1", len(audit.logs))
+	}
+}
+
 func TestInviteService_Accept_HappyPath(t *testing.T) {
 	orgID := uuid.New()
 	creator := uuid.New()

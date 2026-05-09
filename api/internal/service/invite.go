@@ -75,6 +75,33 @@ func (s *InviteService) GenerateForCenterAdmin(ctx context.Context, actorID, org
 	return inv, nil
 }
 
+func (s *InviteService) GenerateForTeacher(ctx context.Context, actorID, orgID uuid.UUID) (*model.Invite, error) {
+	tokenBytes := make([]byte, 24)
+	if _, err := rand.Read(tokenBytes); err != nil {
+		return nil, fmt.Errorf("rand: %w", err)
+	}
+	inv := &model.Invite{
+		OrganizationID: orgID,
+		Role:           "teacher",
+		Token:          hex.EncodeToString(tokenBytes),
+		ExpiresAt:      time.Now().Add(inviteTTL),
+		CreatedBy:      actorID,
+	}
+	if err := s.invites.Create(ctx, inv); err != nil {
+		return nil, fmt.Errorf("create teacher invite: %w", err)
+	}
+
+	tt := "invite"
+	tid := inv.ID
+	_ = s.audit.Create(ctx, &model.AuditLog{
+		ActorID:    &actorID,
+		Action:     "generate_teacher_invite",
+		TargetType: &tt,
+		TargetID:   &tid,
+	})
+	return inv, nil
+}
+
 // AcceptInvite validates the token, pre-creates the user with status=pending,
 // marks the invite used, and sends an OTP. The user verifies via the existing
 // /auth/otp/verify endpoint, which transitions pending → active.
