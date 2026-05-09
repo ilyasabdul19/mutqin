@@ -112,6 +112,18 @@ func main() {
 	)
 	authH := apihandler.NewAuthHandler(authSvc)
 
+	auditRepo := repo.NewAuditLogRepo(adminDB)
+	orgSvc := service.NewOrganizationService(repo.NewOrganizationRepo(adminDB), auditRepo)
+	inviteSvc := service.NewInviteService(
+		repo.NewInviteRepo(adminDB),
+		repo.NewUserRepo(adminDB),
+		repo.NewOtpRepo(adminDB),
+		emailSender,
+		auditRepo,
+	)
+	platformH := apihandler.NewPlatformHandler(orgSvc, inviteSvc)
+	inviteAcceptH := apihandler.NewInviteAcceptHandler(inviteSvc)
+
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
 	r.Use(middleware.Logger(logger))
@@ -123,6 +135,16 @@ func main() {
 	r.Get("/api/v1/health", handler.Health())
 	r.Post("/api/v1/auth/otp/request", authH.RequestOTP)
 	r.Post("/api/v1/auth/otp/verify", authH.VerifyOTP)
+	r.Post("/api/v1/auth/invite/accept", inviteAcceptH.Accept)
+
+	// Super-admin platform routes.
+	r.Group(func(pr chi.Router) {
+		pr.Use(middleware.Role("super_admin"))
+		pr.Post("/api/v1/organizations", platformH.CreateOrg)
+		pr.Get("/api/v1/organizations", platformH.ListOrgs)
+		pr.Get("/api/v1/organizations/{slug}", platformH.GetOrgBySlug)
+		pr.Post("/api/v1/organizations/{id}/invite", platformH.GenerateInvite)
+	})
 
 	srv := &http.Server{
 		Addr:              fmt.Sprintf(":%s", cfg.Port),
