@@ -9,6 +9,7 @@ import (
 
 	"github.com/uptrace/bun"
 
+	"github.com/ilyas/mutqin-api/internal/db"
 	"github.com/ilyas/mutqin-api/internal/tenant"
 )
 
@@ -40,7 +41,15 @@ func RLSContext(runner RLSRunner) func(http.Handler) http.Handler {
 				if err := tx.ExecContext(ctx, fmt.Sprintf("SET LOCAL app.current_tenant = '%s'", id.String())); err != nil {
 					return err
 				}
-				next.ServeHTTP(w, r.WithContext(ctx))
+				// If the runner's tx exposes its underlying bun.IDB, attach it
+				// to ctx so downstream repos pick up the SET-LOCAL'd
+				// connection via db.TxFrom. Test-stub txs don't implement
+				// Underlying; that path keeps the ctx unchanged.
+				newCtx := ctx
+				if u, ok := tx.(interface{ Underlying() bun.IDB }); ok {
+					newCtx = db.WithTx(ctx, u.Underlying())
+				}
+				next.ServeHTTP(w, r.WithContext(newCtx))
 				return nil
 			})
 			if err != nil {
@@ -62,9 +71,15 @@ func (r *realRunner) RunInTx(ctx context.Context, _ *bun.IDB, fn func(ctx contex
 	})
 }
 
+// bunTx wraps bun.Tx with the simpler RLSTx surface. It also exposes the
+// underlying bun.IDB so the middleware can thread it through ctx for repos.
 type bunTx struct{ tx bun.Tx }
 
 func (b bunTx) ExecContext(ctx context.Context, query string, args ...any) error {
 	_, err := b.tx.ExecContext(ctx, query, args...)
 	return err
 }
+
+// Underlying returns the wrapped bun.Tx as a bun.IDB so callers can run full
+// repo operations on the same RLS-scoped connection.
+func (b bunTx) Underlying() bun.IDB { return b.tx }

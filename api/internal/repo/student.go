@@ -10,6 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/uptrace/bun"
 
+	"github.com/ilyas/mutqin-api/internal/db"
 	"github.com/ilyas/mutqin-api/internal/model"
 )
 
@@ -17,12 +18,19 @@ type StudentRepo struct {
 	db bun.IDB
 }
 
-func NewStudentRepo(db bun.IDB) *StudentRepo {
-	return &StudentRepo{db: db}
+func NewStudentRepo(d bun.IDB) *StudentRepo {
+	return &StudentRepo{db: d}
+}
+
+// idb returns the request-scoped tx from ctx if RLSContext middleware has set
+// one (so SET LOCAL app.current_tenant applies); otherwise returns the handle
+// the repo was constructed with.
+func (r *StudentRepo) idb(ctx context.Context) bun.IDB {
+	return db.TxFrom(ctx, r.db)
 }
 
 func (r *StudentRepo) Create(ctx context.Context, s *model.Student) error {
-	_, err := r.db.NewInsert().Model(s).Returning("*").Exec(ctx)
+	_, err := r.idb(ctx).NewInsert().Model(s).Returning("*").Exec(ctx)
 	if err != nil {
 		return fmt.Errorf("insert student: %w", err)
 	}
@@ -31,7 +39,7 @@ func (r *StudentRepo) Create(ctx context.Context, s *model.Student) error {
 
 func (r *StudentRepo) GetByID(ctx context.Context, id uuid.UUID) (*model.Student, error) {
 	s := new(model.Student)
-	err := r.db.NewSelect().Model(s).Where("id = ?", id).Scan(ctx)
+	err := r.idb(ctx).NewSelect().Model(s).Where("id = ?", id).Scan(ctx)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, ErrNotFound
 	}
@@ -43,7 +51,7 @@ func (r *StudentRepo) GetByID(ctx context.Context, id uuid.UUID) (*model.Student
 
 func (r *StudentRepo) ListByHalaqah(ctx context.Context, halaqahID uuid.UUID, limit, offset int) ([]model.Student, error) {
 	var rows []model.Student
-	err := r.db.NewSelect().
+	err := r.idb(ctx).NewSelect().
 		Model(&rows).
 		Where("halaqah_id = ?", halaqahID).
 		OrderExpr("name ASC").
@@ -58,7 +66,7 @@ func (r *StudentRepo) ListByHalaqah(ctx context.Context, halaqahID uuid.UUID, li
 
 func (r *StudentRepo) ListByOrg(ctx context.Context, limit, offset int) ([]model.Student, error) {
 	var rows []model.Student
-	err := r.db.NewSelect().
+	err := r.idb(ctx).NewSelect().
 		Model(&rows).
 		OrderExpr("name ASC").
 		Limit(limit).
@@ -71,7 +79,7 @@ func (r *StudentRepo) ListByOrg(ctx context.Context, limit, offset int) ([]model
 }
 
 func (r *StudentRepo) Update(ctx context.Context, s *model.Student) error {
-	res, err := r.db.NewUpdate().
+	res, err := r.idb(ctx).NewUpdate().
 		Model(s).
 		Set("name = ?", s.Name).
 		Set("age = ?", s.Age).
@@ -92,7 +100,7 @@ func (r *StudentRepo) Update(ctx context.Context, s *model.Student) error {
 }
 
 func (r *StudentRepo) Transfer(ctx context.Context, studentID, newHalaqahID uuid.UUID) error {
-	res, err := r.db.NewUpdate().
+	res, err := r.idb(ctx).NewUpdate().
 		Model((*model.Student)(nil)).
 		Set("halaqah_id = ?", newHalaqahID).
 		Where("id = ?", studentID).
