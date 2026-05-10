@@ -124,12 +124,20 @@ func main() {
 	platformH := apihandler.NewPlatformHandler(orgSvc, inviteSvc)
 	inviteAcceptH := apihandler.NewInviteAcceptHandler(inviteSvc)
 
+	halaqahRepo := repo.NewHalaqahRepo(appDB)
+	halaqahSvc := service.NewHalaqahService(halaqahRepo, auditRepo)
+	studentSvc := service.NewStudentService(repo.NewStudentRepo(appDB), halaqahRepo, auditRepo)
+	halaqatH := apihandler.NewHalaqatHandler(halaqahSvc)
+	studentsH := apihandler.NewStudentsHandler(studentSvc)
+	teachersH := apihandler.NewTeachersHandler(inviteSvc)
+
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
 	r.Use(middleware.Logger(logger))
 	r.Use(middleware.CORS)
 	r.Use(middleware.Tenant(orgLookup, cfg.BaseHost))
 	r.Use(middleware.Auth(jwtVerifier))
+	r.Use(middleware.AuthAsTenant)
 	r.Use(middleware.RLSContext(middleware.NewBunRunner(appDB)))
 
 	r.Get("/api/v1/health", handler.Health())
@@ -144,6 +152,24 @@ func main() {
 		pr.Get("/api/v1/organizations", platformH.ListOrgs)
 		pr.Get("/api/v1/organizations/{slug}", platformH.GetOrgBySlug)
 		pr.Post("/api/v1/organizations/{id}/invite", platformH.GenerateInvite)
+	})
+
+	// Center-admin routes (super_admin can also access).
+	r.Group(func(ca chi.Router) {
+		ca.Use(middleware.Role("center_admin", "super_admin"))
+		ca.Post("/api/v1/halaqat", halaqatH.Create)
+		ca.Get("/api/v1/halaqat", halaqatH.List)
+		ca.Get("/api/v1/halaqat/{id}", halaqatH.Get)
+		ca.Patch("/api/v1/halaqat/{id}", halaqatH.Update)
+		ca.Post("/api/v1/halaqat/{id}/students", studentsH.Enroll)
+		ca.Post("/api/v1/students/{id}/transfer", studentsH.Transfer)
+		ca.Post("/api/v1/teachers/invite", teachersH.GenerateInvite)
+	})
+
+	// Teacher + admin routes (read-only listing).
+	r.Group(func(tr chi.Router) {
+		tr.Use(middleware.Role("teacher", "center_admin", "super_admin"))
+		tr.Get("/api/v1/halaqat/{id}/students", studentsH.ListByHalaqah)
 	})
 
 	srv := &http.Server{
