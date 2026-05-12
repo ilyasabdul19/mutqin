@@ -131,6 +131,9 @@ func main() {
 	studentsH := apihandler.NewStudentsHandler(studentSvc)
 	teachersH := apihandler.NewTeachersHandler(inviteSvc)
 
+	recitationSvc := service.NewRecitationService(repo.NewRecitationRepo(appDB), auditRepo)
+	recitationsH := apihandler.NewRecitationsHandler(recitationSvc)
+
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
 	r.Use(middleware.Logger(logger))
@@ -166,10 +169,14 @@ func main() {
 		ca.Post("/api/v1/teachers/invite", teachersH.GenerateInvite)
 	})
 
-	// Teacher + admin routes (read-only listing).
+	// Teacher + admin routes (read + recitation recording).
 	r.Group(func(tr chi.Router) {
 		tr.Use(middleware.Role("teacher", "center_admin", "super_admin"))
 		tr.Get("/api/v1/halaqat/{id}/students", studentsH.ListByHalaqah)
+		tr.Post("/api/v1/recitations", recitationsH.Record)
+		tr.Post("/api/v1/recitations/batch", recitationsH.RecordBatch)
+		tr.Get("/api/v1/students/{id}/recitations", recitationsH.ListByStudent)
+		tr.Get("/api/v1/students/{id}/recitations/latest", recitationsH.LatestByStudent)
 	})
 
 	srv := &http.Server{
