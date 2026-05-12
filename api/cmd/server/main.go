@@ -135,6 +135,9 @@ func main() {
 	attendanceH := apihandler.NewAttendanceHandler(attendanceSvc)
 	announcementsH := apihandler.NewAnnouncementsHandler(announcementSvc)
 
+	recitationSvc := service.NewRecitationService(repo.NewRecitationRepo(appDB), auditRepo)
+	recitationsH := apihandler.NewRecitationsHandler(recitationSvc)
+
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
 	r.Use(middleware.Logger(logger))
@@ -176,12 +179,16 @@ func main() {
 		ca.Patch("/api/v1/organizations/me/landing", platformH.UpdateLanding)
 	})
 
-	// Teacher + admin routes (read-only listing + attendance marking).
+	// Teacher + admin routes (read-only listing + attendance marking + recitation recording).
 	r.Group(func(tr chi.Router) {
 		tr.Use(middleware.Role("teacher", "center_admin", "super_admin"))
 		tr.Get("/api/v1/halaqat/{id}/students", studentsH.ListByHalaqah)
 		tr.Post("/api/v1/halaqat/{id}/attendance", attendanceH.MarkBatch)
 		tr.Get("/api/v1/halaqat/{id}/attendance", attendanceH.ListByHalaqahDate)
+		tr.Post("/api/v1/recitations", recitationsH.Record)
+		tr.Post("/api/v1/recitations/batch", recitationsH.RecordBatch)
+		tr.Get("/api/v1/students/{id}/recitations", recitationsH.ListByStudent)
+		tr.Get("/api/v1/students/{id}/recitations/latest", recitationsH.LatestByStudent)
 	})
 
 	srv := &http.Server{
