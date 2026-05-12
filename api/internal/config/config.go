@@ -9,9 +9,12 @@ import (
 
 // Config holds all configuration values loaded from environment variables.
 type Config struct {
-	DatabaseURL string
-	JWTSecret   string
-	Port        string
+	DatabaseURL    string
+	AppDatabaseURL string
+	JWTSecret      string
+	Port           string
+
+	BaseHost string
 
 	SMTPHost string
 	SMTPPort string
@@ -22,6 +25,13 @@ type Config struct {
 	R2AccessKey string
 	R2SecretKey string
 	R2Bucket    string
+
+	CFAPIToken         string
+	CFZoneID           string
+	CFRecordTargetIP   string
+	CFRecordBaseDomain string
+
+	JWTIssuer string
 }
 
 // Load reads a .env file (if present) and populates Config from environment
@@ -50,6 +60,28 @@ func Load() (*Config, error) {
 		R2AccessKey: os.Getenv("R2_ACCESS_KEY"),
 		R2SecretKey: os.Getenv("R2_SECRET_KEY"),
 		R2Bucket:    os.Getenv("R2_BUCKET"),
+	}
+
+	cfg.AppDatabaseURL = os.Getenv("APP_DATABASE_URL")
+	if cfg.AppDatabaseURL == "" {
+		cfg.AppDatabaseURL = cfg.DatabaseURL
+	}
+	cfg.BaseHost = os.Getenv("BASE_HOST")
+	if cfg.BaseHost == "" {
+		cfg.BaseHost = "mutqin.app"
+	}
+
+	cfg.CFAPIToken = os.Getenv("CF_DNS_API_TOKEN")
+	cfg.CFZoneID = os.Getenv("CF_ZONE_ID")
+	cfg.CFRecordTargetIP = os.Getenv("CF_RECORD_TARGET_IP")
+	cfg.CFRecordBaseDomain = os.Getenv("CF_RECORD_BASE_DOMAIN")
+	if cfg.CFRecordBaseDomain == "" {
+		cfg.CFRecordBaseDomain = "mutqin.app"
+	}
+
+	cfg.JWTIssuer = os.Getenv("JWT_ISSUER")
+	if cfg.JWTIssuer == "" {
+		cfg.JWTIssuer = "mutqin-api"
 	}
 
 	if cfg.DatabaseURL == "" {
