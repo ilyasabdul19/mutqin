@@ -127,9 +127,11 @@ func main() {
 	halaqahRepo := repo.NewHalaqahRepo(appDB)
 	halaqahSvc := service.NewHalaqahService(halaqahRepo, auditRepo)
 	studentSvc := service.NewStudentService(repo.NewStudentRepo(appDB), halaqahRepo, auditRepo)
+	attendanceSvc := service.NewAttendanceService(repo.NewAttendanceRepo(appDB), auditRepo)
 	halaqatH := apihandler.NewHalaqatHandler(halaqahSvc)
 	studentsH := apihandler.NewStudentsHandler(studentSvc)
 	teachersH := apihandler.NewTeachersHandler(inviteSvc)
+	attendanceH := apihandler.NewAttendanceHandler(attendanceSvc)
 
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
@@ -164,12 +166,16 @@ func main() {
 		ca.Post("/api/v1/halaqat/{id}/students", studentsH.Enroll)
 		ca.Post("/api/v1/students/{id}/transfer", studentsH.Transfer)
 		ca.Post("/api/v1/teachers/invite", teachersH.GenerateInvite)
+		ca.Get("/api/v1/students/{id}/attendance", attendanceH.ListByStudent)
+		ca.Get("/api/v1/attendance", attendanceH.ListByOrg)
 	})
 
-	// Teacher + admin routes (read-only listing).
+	// Teacher + admin routes (read-only listing + attendance marking).
 	r.Group(func(tr chi.Router) {
 		tr.Use(middleware.Role("teacher", "center_admin", "super_admin"))
 		tr.Get("/api/v1/halaqat/{id}/students", studentsH.ListByHalaqah)
+		tr.Post("/api/v1/halaqat/{id}/attendance", attendanceH.MarkBatch)
+		tr.Get("/api/v1/halaqat/{id}/attendance", attendanceH.ListByHalaqahDate)
 	})
 
 	srv := &http.Server{
