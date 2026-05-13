@@ -1,8 +1,0 @@
-{{ define "title" }}{{ .Org.Name }} — Mutqin{{ end }}
-
-{{ define "content" }}
-<h1>{{ .Org.Name }}</h1>
-{{ if .Org.Description }}<p class="description">{{ .Org.Description }}</p>{{ end }}
-{{ if .Org.City }}<p class="meta">{{ .Org.City }}</p>{{ end }}
-<a class="cta" href="/{{ .Org.Slug }}/register">سجّل ابنك / Register your child</a>
-{{ end }}
