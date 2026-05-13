@@ -60,8 +60,9 @@ func main() {
 	defer appDB.Close()
 
 	orgRepo := repo.NewOrganizationRepo(adminDB)
+	announcementRepo := repo.NewAnnouncementRepo(adminDB)
 
-	handler, err := landing.New(orgRepo, appDB, logger)
+	handler, err := landing.New(orgRepo, announcementRepo, appDB, logger)
 	if err != nil {
 		slog.Error("init landing handler", "error", err)
 		os.Exit(1)

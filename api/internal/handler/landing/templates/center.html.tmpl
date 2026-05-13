@@ -4,5 +4,21 @@
 <h1>{{ .Org.Name }}</h1>
 {{ if .Org.Description }}<p class="description">{{ .Org.Description }}</p>{{ end }}
 {{ if .Org.City }}<p class="meta">{{ .Org.City }}</p>{{ end }}
+
+{{ if .Announcements }}
+<section class="announcements">
+  <h2>الإعلانات / Announcements</h2>
+  <ul>
+    {{ range .Announcements }}
+    <li class="announcement">
+      <h3>{{ .Title }}</h3>
+      <p>{{ .Body }}</p>
+      <time datetime="{{ .CreatedAt.Format "2006-01-02" }}">{{ .CreatedAt.Format "2006-01-02" }}</time>
+    </li>
+    {{ end }}
+  </ul>
+</section>
+{{ end }}
+
 <a class="cta" href="/{{ .Org.Slug }}/register">سجّل ابنك / Register your child</a>
 {{ end }}

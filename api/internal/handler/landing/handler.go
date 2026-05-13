@@ -14,6 +14,7 @@ import (
 	"strings"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/google/uuid"
 	"github.com/uptrace/bun"
 
 	"github.com/ilyas/mutqin-api/internal/model"
@@ -27,13 +28,21 @@ type OrgLookup interface {
 	GetBySlugAdmin(ctx context.Context, slug string) (*model.Organization, error)
 }
 
+// AnnouncementLookup is the public read surface for the landing handler.
+// Called via the admin handle (no tenant ctx) so the implementation must
+// scope by orgID explicitly — not via TenantScoped's BeforeSelect hook.
+type AnnouncementLookup interface {
+	ListByOrgPublic(ctx context.Context, orgID uuid.UUID, limit int) ([]model.Announcement, error)
+}
+
 // Handler bundles the dependencies for landing routes.
 type Handler struct {
-	orgs   OrgLookup
-	appDB  *bun.DB // app_role connection — used to wrap RLS-subject INSERTs in a SET LOCAL transaction.
-	tmpls  map[string]*template.Template
-	static fs.FS
-	logger *slog.Logger
+	orgs          OrgLookup
+	announcements AnnouncementLookup
+	appDB         *bun.DB // app_role connection — used to wrap RLS-subject INSERTs in a SET LOCAL transaction.
+	tmpls         map[string]*template.Template
+	static        fs.FS
+	logger        *slog.Logger
 }
 
 // New constructs a Handler. Each page template is parsed together with the
@@ -43,7 +52,7 @@ type Handler struct {
 // appDB is the mutqin_app (RLS-subject) handle. Submit handlers wrap their
 // INSERT in a transaction and run SET LOCAL app.current_tenant before the
 // repo call so RLS policies pass.
-func New(orgs OrgLookup, appDB *bun.DB, logger *slog.Logger) (*Handler, error) {
+func New(orgs OrgLookup, announcements AnnouncementLookup, appDB *bun.DB, logger *slog.Logger) (*Handler, error) {
 	pages := []string{
 		"center.html.tmpl",
 		"register.html.tmpl",
@@ -59,11 +68,12 @@ func New(orgs OrgLookup, appDB *bun.DB, logger *slog.Logger) (*Handler, error) {
 		tmpls[page] = t
 	}
 	return &Handler{
-		orgs:   orgs,
-		appDB:  appDB,
-		tmpls:  tmpls,
-		static: Static(),
-		logger: logger,
+		orgs:          orgs,
+		announcements: announcements,
+		appDB:         appDB,
+		tmpls:         tmpls,
+		static:        Static(),
+		logger:        logger,
 	}, nil
 }
 
@@ -115,7 +125,22 @@ func (h *Handler) center(w http.ResponseWriter, r *http.Request) {
 		h.notFound(w, r)
 		return
 	}
-	h.render(w, "center.html.tmpl", http.StatusOK, map[string]any{"Org": org})
+	// Fetch the most recent announcements for the center. Failures are
+	// non-fatal — the landing page still renders the org info — but we
+	// log so they don't go silent.
+	var announcements []model.Announcement
+	if h.announcements != nil {
+		got, err := h.announcements.ListByOrgPublic(r.Context(), org.ID, 5)
+		if err != nil {
+			h.logger.Error("list announcements", "slug", slug, "error", err)
+		} else {
+			announcements = got
+		}
+	}
+	h.render(w, "center.html.tmpl", http.StatusOK, map[string]any{
+		"Org":           org,
+		"Announcements": announcements,
+	})
 }
 
 func (h *Handler) registerForm(w http.ResponseWriter, r *http.Request) {
