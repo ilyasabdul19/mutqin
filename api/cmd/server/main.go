@@ -128,10 +128,12 @@ func main() {
 	halaqahSvc := service.NewHalaqahService(halaqahRepo, auditRepo)
 	studentSvc := service.NewStudentService(repo.NewStudentRepo(appDB), halaqahRepo, auditRepo)
 	attendanceSvc := service.NewAttendanceService(repo.NewAttendanceRepo(appDB), auditRepo)
+	announcementSvc := service.NewAnnouncementService(repo.NewAnnouncementRepo(appDB), auditRepo)
 	halaqatH := apihandler.NewHalaqatHandler(halaqahSvc)
 	studentsH := apihandler.NewStudentsHandler(studentSvc)
 	teachersH := apihandler.NewTeachersHandler(inviteSvc)
 	attendanceH := apihandler.NewAttendanceHandler(attendanceSvc)
+	announcementsH := apihandler.NewAnnouncementsHandler(announcementSvc)
 
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
@@ -168,6 +170,10 @@ func main() {
 		ca.Post("/api/v1/teachers/invite", teachersH.GenerateInvite)
 		ca.Get("/api/v1/students/{id}/attendance", attendanceH.ListByStudent)
 		ca.Get("/api/v1/attendance", attendanceH.ListByOrg)
+		ca.Post("/api/v1/announcements", announcementsH.Create)
+		ca.Get("/api/v1/announcements", announcementsH.List)
+		ca.Delete("/api/v1/announcements/{id}", announcementsH.Delete)
+		ca.Patch("/api/v1/organizations/me/landing", platformH.UpdateLanding)
 	})
 
 	// Teacher + admin routes (read-only listing + attendance marking).

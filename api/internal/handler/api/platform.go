@@ -23,6 +23,7 @@ type OrgService interface {
 	Create(ctx context.Context, actor uuid.UUID, in service.CreateOrgInput) (*model.Organization, error)
 	GetBySlug(ctx context.Context, slug string) (*model.Organization, error)
 	List(ctx context.Context, limit, offset int) ([]model.Organization, error)
+	UpdateLanding(ctx context.Context, actor, orgID uuid.UUID, in service.UpdateLandingInput) error
 }
 
 type InviteIssuer interface {
@@ -130,6 +131,54 @@ func (h *PlatformHandler) GenerateInvite(w http.ResponseWriter, r *http.Request)
 		"token":      inv.Token,
 		"expires_at": inv.ExpiresAt,
 	}})
+}
+
+// updateLandingBody is what PATCH /api/v1/organizations/me/landing accepts.
+// Schedule is a raw JSON value so callers can pass arbitrary structured
+// shapes (object, array, etc.) — it's stored as jsonb downstream.
+type updateLandingBody struct {
+	Description *string         `json:"description"`
+	LogoURL     *string         `json:"logo_url"`
+	City        *string         `json:"city"`
+	Schedule    json.RawMessage `json:"schedule"`
+}
+
+// UpdateLanding patches the landing-page-visible fields on the caller's
+// own organization. The center_admin's orgID is read from the JWT-derived
+// Identity in ctx, so the endpoint is self-scoped — center_admin cannot
+// edit another center's landing page through this route.
+func (h *PlatformHandler) UpdateLanding(w http.ResponseWriter, r *http.Request) {
+	id, ok := auth.From(r.Context())
+	if !ok {
+		response.Error(w, http.StatusUnauthorized, response.CodeUnauthorized, "auth required")
+		return
+	}
+	if id.OrgID == nil {
+		response.Error(w, http.StatusBadRequest, response.CodeValidationError, "org context required")
+		return
+	}
+	var b updateLandingBody
+	if err := json.NewDecoder(r.Body).Decode(&b); err != nil {
+		response.Error(w, http.StatusBadRequest, response.CodeValidationError, "invalid body")
+		return
+	}
+	in := service.UpdateLandingInput{
+		Description: b.Description,
+		LogoURL:     b.LogoURL,
+		City:        b.City,
+	}
+	if len(b.Schedule) > 0 {
+		in.Schedule = []byte(b.Schedule)
+	}
+	if err := h.orgs.UpdateLanding(r.Context(), id.UserID, *id.OrgID, in); err != nil {
+		if errors.Is(err, repo.ErrNotFound) {
+			response.Error(w, http.StatusNotFound, response.CodeNotFound, "organization not found")
+			return
+		}
+		response.Error(w, http.StatusInternalServerError, response.CodeInternalError, "could not update landing")
+		return
+	}
+	response.Success(w, map[string]string{"status": "updated"})
 }
 
 // SetURLParamForTest is a thin testing helper — adds a Chi URL parameter to a

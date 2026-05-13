@@ -24,6 +24,11 @@ type stubOrgService struct {
 	created      *model.Organization
 	createErr    error
 	listed       []model.Organization
+
+	updateLandingActor uuid.UUID
+	updateLandingOrgID uuid.UUID
+	updateLandingInput service.UpdateLandingInput
+	updateLandingErr   error
 }
 
 func (s *stubOrgService) Create(_ context.Context, actor uuid.UUID, in service.CreateOrgInput) (*model.Organization, error) {
@@ -40,6 +45,12 @@ func (s *stubOrgService) GetBySlug(_ context.Context, slug string) (*model.Organ
 }
 func (s *stubOrgService) List(_ context.Context, limit, offset int) ([]model.Organization, error) {
 	return s.listed, nil
+}
+func (s *stubOrgService) UpdateLanding(_ context.Context, actor, orgID uuid.UUID, in service.UpdateLandingInput) error {
+	s.updateLandingActor = actor
+	s.updateLandingOrgID = orgID
+	s.updateLandingInput = in
+	return s.updateLandingErr
 }
 
 type stubInviteService struct {
@@ -100,6 +111,81 @@ func TestPlatform_CreateOrg_BadJSON(t *testing.T) {
 	h.CreateOrg(rec, req)
 	if rec.Code != http.StatusBadRequest {
 		t.Fatalf("status: %d", rec.Code)
+	}
+}
+
+func TestPlatform_UpdateLanding_RequiresIdentity(t *testing.T) {
+	h := apihandler.NewPlatformHandler(&stubOrgService{}, &stubInviteService{})
+	body, _ := json.Marshal(map[string]any{"description": "x"})
+	req := httptest.NewRequest(http.MethodPatch, "/api/v1/organizations/me/landing", bytes.NewReader(body))
+	rec := httptest.NewRecorder()
+	h.UpdateLanding(rec, req)
+	if rec.Code != http.StatusUnauthorized {
+		t.Fatalf("want 401 got %d", rec.Code)
+	}
+}
+
+func TestPlatform_UpdateLanding_RequiresOrgID(t *testing.T) {
+	h := apihandler.NewPlatformHandler(&stubOrgService{}, &stubInviteService{})
+	body, _ := json.Marshal(map[string]any{"description": "x"})
+	req := httptest.NewRequest(http.MethodPatch, "/api/v1/organizations/me/landing", bytes.NewReader(body))
+	req = req.WithContext(auth.With(req.Context(), auth.Identity{UserID: uuid.New(), Role: "super_admin"}))
+	rec := httptest.NewRecorder()
+	h.UpdateLanding(rec, req)
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("want 400 got %d", rec.Code)
+	}
+}
+
+func TestPlatform_UpdateLanding_HappyPath(t *testing.T) {
+	orgs := &stubOrgService{}
+	h := apihandler.NewPlatformHandler(orgs, &stubInviteService{})
+
+	body, _ := json.Marshal(map[string]any{
+		"description": "We are great",
+		"logo_url":    "https://example.com/logo.png",
+		"city":        "Mogadishu",
+		"schedule":    map[string]string{"mon": "08:00-12:00"},
+	})
+	req := httptest.NewRequest(http.MethodPatch, "/api/v1/organizations/me/landing", bytes.NewReader(body))
+	actor := uuid.New()
+	orgID := uuid.New()
+	req = req.WithContext(auth.With(req.Context(), auth.Identity{UserID: actor, OrgID: &orgID, Role: "center_admin"}))
+	rec := httptest.NewRecorder()
+	h.UpdateLanding(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status=%d body=%s", rec.Code, rec.Body.String())
+	}
+	if orgs.updateLandingActor != actor {
+		t.Fatalf("actor mismatch")
+	}
+	if orgs.updateLandingOrgID != orgID {
+		t.Fatalf("org mismatch")
+	}
+	if orgs.updateLandingInput.Description == nil || *orgs.updateLandingInput.Description != "We are great" {
+		t.Fatalf("description: %+v", orgs.updateLandingInput)
+	}
+	if orgs.updateLandingInput.LogoURL == nil || *orgs.updateLandingInput.LogoURL != "https://example.com/logo.png" {
+		t.Fatalf("logo: %+v", orgs.updateLandingInput)
+	}
+	if orgs.updateLandingInput.City == nil || *orgs.updateLandingInput.City != "Mogadishu" {
+		t.Fatalf("city: %+v", orgs.updateLandingInput)
+	}
+	if len(orgs.updateLandingInput.Schedule) == 0 {
+		t.Fatalf("schedule not forwarded")
+	}
+}
+
+func TestPlatform_UpdateLanding_BadJSON(t *testing.T) {
+	h := apihandler.NewPlatformHandler(&stubOrgService{}, &stubInviteService{})
+	req := httptest.NewRequest(http.MethodPatch, "/api/v1/organizations/me/landing", bytes.NewReader([]byte("not-json")))
+	orgID := uuid.New()
+	req = req.WithContext(auth.With(req.Context(), auth.Identity{UserID: uuid.New(), OrgID: &orgID, Role: "center_admin"}))
+	rec := httptest.NewRecorder()
+	h.UpdateLanding(rec, req)
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("want 400 got %d", rec.Code)
 	}
 }
 

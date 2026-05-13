@@ -76,6 +76,62 @@ func TestOrganizationRepo_GetByID_NotFound(t *testing.T) {
 	}
 }
 
+func TestOrganizationRepo_Update_LandingFields(t *testing.T) {
+	t.Cleanup(func() { truncateAll(t) })
+	ctx := context.Background()
+	r := repo.NewOrganizationRepo(testDB)
+
+	org := &model.Organization{
+		Name:    "Markaz Update",
+		Slug:    "update-org",
+		Country: "SO",
+		Tier:    "free",
+		Status:  "active",
+	}
+	if err := r.Create(ctx, org); err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+
+	desc := "A beautiful center."
+	city := "Mogadishu"
+	logo := "https://example.com/logo.png"
+	org.Description = &desc
+	org.City = &city
+	org.LogoURL = &logo
+	org.Schedule = []byte(`{"mon":"08:00-12:00"}`)
+
+	if err := r.Update(ctx, org); err != nil {
+		t.Fatalf("Update: %v", err)
+	}
+
+	got, err := r.GetByID(ctx, org.ID)
+	if err != nil {
+		t.Fatalf("GetByID: %v", err)
+	}
+	if got.Description == nil || *got.Description != desc {
+		t.Fatalf("description: %v", got.Description)
+	}
+	if got.City == nil || *got.City != city {
+		t.Fatalf("city: %v", got.City)
+	}
+	if got.LogoURL == nil || *got.LogoURL != logo {
+		t.Fatalf("logo: %v", got.LogoURL)
+	}
+	if string(got.Schedule) == "" {
+		t.Fatalf("schedule empty")
+	}
+}
+
+func TestOrganizationRepo_Update_NotFound(t *testing.T) {
+	t.Cleanup(func() { truncateAll(t) })
+	ctx := context.Background()
+	r := repo.NewOrganizationRepo(testDB)
+	missing := &model.Organization{ID: uuid.New(), Name: "x", Slug: "x", Country: "SO", Tier: "free", Status: "active"}
+	if err := r.Update(ctx, missing); !errors.Is(err, repo.ErrNotFound) {
+		t.Fatalf("err=%v want ErrNotFound", err)
+	}
+}
+
 func TestOrganizationRepo_List(t *testing.T) {
 	t.Cleanup(func() { truncateAll(t) })
 	ctx := context.Background()

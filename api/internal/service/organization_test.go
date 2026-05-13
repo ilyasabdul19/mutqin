@@ -15,18 +15,29 @@ import (
 type stubOrgRepo struct {
 	created *model.Organization
 	stored  map[string]*model.Organization
+	byID    map[uuid.UUID]*model.Organization
 	listed  []model.Organization
 }
 
 func newStubOrgRepo() *stubOrgRepo {
-	return &stubOrgRepo{stored: map[string]*model.Organization{}}
+	return &stubOrgRepo{
+		stored: map[string]*model.Organization{},
+		byID:   map[uuid.UUID]*model.Organization{},
+	}
 }
 
 func (s *stubOrgRepo) Create(_ context.Context, o *model.Organization) error {
 	o.ID = uuid.New()
 	s.created = o
 	s.stored[o.Slug] = o
+	s.byID[o.ID] = o
 	return nil
+}
+func (s *stubOrgRepo) GetByID(_ context.Context, id uuid.UUID) (*model.Organization, error) {
+	if o, ok := s.byID[id]; ok {
+		return o, nil
+	}
+	return nil, repo.ErrNotFound
 }
 func (s *stubOrgRepo) GetBySlug(_ context.Context, slug string) (*model.Organization, error) {
 	if o, ok := s.stored[slug]; ok {
@@ -36,6 +47,17 @@ func (s *stubOrgRepo) GetBySlug(_ context.Context, slug string) (*model.Organiza
 }
 func (s *stubOrgRepo) List(_ context.Context, limit, offset int) ([]model.Organization, error) {
 	return s.listed, nil
+}
+func (s *stubOrgRepo) Update(_ context.Context, o *model.Organization) error {
+	cur, ok := s.byID[o.ID]
+	if !ok {
+		return repo.ErrNotFound
+	}
+	cur.Description = o.Description
+	cur.LogoURL = o.LogoURL
+	cur.City = o.City
+	cur.Schedule = o.Schedule
+	return nil
 }
 
 type stubAuditRepo struct{ logs []model.AuditLog }
@@ -99,5 +121,69 @@ func TestOrgService_GetBySlug(t *testing.T) {
 	}
 	if got.Slug != "foo" {
 		t.Fatalf("slug=%s", got.Slug)
+	}
+}
+
+func TestOrgService_UpdateLanding_PersistsAndAudits(t *testing.T) {
+	orgs := newStubOrgRepo()
+	audit := &stubAuditRepo{}
+	svc := service.NewOrganizationService(orgs, audit)
+
+	o, err := svc.Create(context.Background(), uuid.New(), service.CreateOrgInput{
+		Name: "Old", Slug: "u-1", Country: "SO",
+	})
+	if err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+
+	actor := uuid.New()
+	desc := "New description"
+	logo := "https://example.com/logo.png"
+	city := "Mogadishu"
+	schedule := []byte(`{"mon":"08:00-12:00"}`)
+	in := service.UpdateLandingInput{
+		Description: &desc,
+		LogoURL:     &logo,
+		City:        &city,
+		Schedule:    schedule,
+	}
+	if err := svc.UpdateLanding(context.Background(), actor, o.ID, in); err != nil {
+		t.Fatalf("UpdateLanding: %v", err)
+	}
+
+	got, err := orgs.GetByID(context.Background(), o.ID)
+	if err != nil {
+		t.Fatalf("GetByID: %v", err)
+	}
+	if got.Description == nil || *got.Description != desc {
+		t.Fatalf("description: %v", got.Description)
+	}
+	if got.LogoURL == nil || *got.LogoURL != logo {
+		t.Fatalf("logo: %v", got.LogoURL)
+	}
+	if got.City == nil || *got.City != city {
+		t.Fatalf("city: %v", got.City)
+	}
+	if len(got.Schedule) == 0 {
+		t.Fatalf("schedule not persisted")
+	}
+
+	if len(audit.logs) != 2 {
+		t.Fatalf("audit logs=%d want 2 (create+update_landing)", len(audit.logs))
+	}
+	if audit.logs[1].Action != "update_landing" {
+		t.Fatalf("audit action=%s want update_landing", audit.logs[1].Action)
+	}
+	if audit.logs[1].ActorID == nil || *audit.logs[1].ActorID != actor {
+		t.Fatalf("audit actor mismatch")
+	}
+}
+
+func TestOrgService_UpdateLanding_NotFound(t *testing.T) {
+	orgs := newStubOrgRepo()
+	svc := service.NewOrganizationService(orgs, &stubAuditRepo{})
+	err := svc.UpdateLanding(context.Background(), uuid.New(), uuid.New(), service.UpdateLandingInput{})
+	if err == nil {
+		t.Fatalf("want error on missing org")
 	}
 }
