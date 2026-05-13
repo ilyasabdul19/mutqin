@@ -13,8 +13,10 @@ import (
 
 type orgRepo interface {
 	Create(ctx context.Context, o *model.Organization) error
+	GetByID(ctx context.Context, id uuid.UUID) (*model.Organization, error)
 	GetBySlug(ctx context.Context, slug string) (*model.Organization, error)
 	List(ctx context.Context, limit, offset int) ([]model.Organization, error)
+	Update(ctx context.Context, o *model.Organization) error
 }
 
 type auditRepo interface {
@@ -79,4 +81,50 @@ func (s *OrganizationService) List(ctx context.Context, limit, offset int) ([]mo
 		limit = 50
 	}
 	return s.orgs.List(ctx, limit, offset)
+}
+
+// UpdateLandingInput is the validated payload for the landing-page editor.
+// Every field is optional — only non-nil pointers / non-zero slices are
+// applied. nil/empty leaves the existing value untouched.
+type UpdateLandingInput struct {
+	Description *string
+	LogoURL     *string
+	City        *string
+	Schedule    []byte
+}
+
+// UpdateLanding mutates the landing-page-visible fields on an organization.
+// Authorization (e.g. center_admin owns this org) is enforced upstream by
+// the handler via the JWT-derived OrgID, so this entry-point trusts orgID.
+// Returns ErrInvalidInput if the org cannot be loaded.
+func (s *OrganizationService) UpdateLanding(ctx context.Context, actorID, orgID uuid.UUID, in UpdateLandingInput) error {
+	org, err := s.orgs.GetByID(ctx, orgID)
+	if err != nil {
+		return fmt.Errorf("lookup org: %w", err)
+	}
+	if in.Description != nil {
+		org.Description = in.Description
+	}
+	if in.LogoURL != nil {
+		org.LogoURL = in.LogoURL
+	}
+	if in.City != nil {
+		org.City = in.City
+	}
+	if len(in.Schedule) > 0 {
+		org.Schedule = in.Schedule
+	}
+	if err := s.orgs.Update(ctx, org); err != nil {
+		return fmt.Errorf("update org: %w", err)
+	}
+
+	tt := "organization"
+	tid := org.ID
+	_ = s.audit.Create(ctx, &model.AuditLog{
+		ActorID:    &actorID,
+		Action:     "update_landing",
+		TargetType: &tt,
+		TargetID:   &tid,
+	})
+	return nil
 }
