@@ -1,6 +1,7 @@
 {
   "app": {
-    "name": "مُتقِن"
+    "name": "مُتقِن",
+    "tagline": "إدارة حلقات تحفيظ القرآن الكريم"
   },
   "common": {
     "save": "حفظ",
@@ -9,6 +10,7 @@
     "edit": "تعديل",
     "loading": "جارٍ التحميل...",
     "error": "حدث خطأ",
+    "noResults": "لا توجد نتائج",
     "online": "متصل",
     "offline": "غير متصل",
     "switchLanguage": "تغيير اللغة",
@@ -21,6 +23,8 @@
     "close": "إغلاق"
   },
   "auth": {
+    "login": "تسجيل الدخول",
+    "logout": "تسجيل الخروج",
     "email": "البريد الإلكتروني",
     "enterCode": "أدخل رمز التحقق",
     "sendCode": "إرسال الرمز",
@@ -32,7 +36,37 @@
     "students": "الطلاب",
     "record": "التسجيل",
     "settings": "الإعدادات",
-    "attendance": "الحضور"
+    "attendance": "الحضور",
+    "halaqat": "الحلقات"
+  },
+  "halaqat": {
+    "title": "الحلقات",
+    "create": "إنشاء حلقة",
+    "name": "اسم الحلقة",
+    "teacher": "المعلم",
+    "students": "الطلاب"
+  },
+  "students": {
+    "title": "الطلاب",
+    "add": "إضافة طالب",
+    "name": "الاسم",
+    "level": "المستوى"
+  },
+  "recitation": {
+    "title": "التسميع",
+    "start": "بدء التسميع",
+    "surah": "السورة",
+    "ayahFrom": "من الآية",
+    "ayahTo": "إلى الآية",
+    "mistakes": "الأخطاء",
+    "score": "الدرجة"
+  },
+  "attendance": {
+    "title": "الحضور",
+    "present": "حاضر",
+    "absent": "غائب",
+    "late": "متأخر",
+    "excused": "غياب بعذر"
   },
   "empty": {
     "welcome": "مرحباً بك في مُتقِن",

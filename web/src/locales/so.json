@@ -1,6 +1,7 @@
 {
   "app": {
-    "name": "Mutqin"
+    "name": "Mutqin",
+    "tagline": "Maamulka xalqadaha xifsiga Qur'aanka"
   },
   "common": {
     "save": "Kaydi",
@@ -9,6 +10,7 @@
     "edit": "Wax ka bedel",
     "loading": "Soo dejinayaa...",
     "error": "Khalad ayaa dhacay",
+    "noResults": "Wax natiijo ah lama helin",
     "online": "Online",
     "offline": "Offline",
     "switchLanguage": "Bedel luuqadda",
@@ -21,6 +23,8 @@
     "close": "Xir"
   },
   "auth": {
+    "login": "Soo gal",
+    "logout": "Ka bax",
     "email": "Email",
     "enterCode": "Gali koodka xaqiijinta",
     "sendCode": "Dir koodka",
@@ -32,7 +36,37 @@
     "students": "Ardayda",
     "record": "Duubista",
     "settings": "Goobaha",
-    "attendance": "Imaanshaha"
+    "attendance": "Imaanshaha",
+    "halaqat": "Xalqadaha"
+  },
+  "halaqat": {
+    "title": "Xalqadaha",
+    "create": "Samee xalqad",
+    "name": "Magaca xalqadda",
+    "teacher": "Macallinka",
+    "students": "Ardayda"
+  },
+  "students": {
+    "title": "Ardayda",
+    "add": "Ku dar arday",
+    "name": "Magaca",
+    "level": "Heerka"
+  },
+  "recitation": {
+    "title": "Akhriska",
+    "start": "Bilow akhriska",
+    "surah": "Suuradda",
+    "ayahFrom": "Aayadda laga bilaabay",
+    "ayahTo": "Aayadda lagu dhammeeyay",
+    "mistakes": "Khaladaadka",
+    "score": "Buundooyinka"
+  },
+  "attendance": {
+    "title": "Imaanshaha",
+    "present": "Joog",
+    "absent": "Maqan",
+    "late": "Soo daahay",
+    "excused": "Cudur daar"
   },
   "empty": {
     "welcome": "Ku soo dhawoow Mutqin",
