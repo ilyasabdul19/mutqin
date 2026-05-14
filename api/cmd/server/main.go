@@ -129,11 +129,15 @@ func main() {
 	studentSvc := service.NewStudentService(repo.NewStudentRepo(appDB), halaqahRepo, auditRepo)
 	attendanceSvc := service.NewAttendanceService(repo.NewAttendanceRepo(appDB), auditRepo)
 	announcementSvc := service.NewAnnouncementService(repo.NewAnnouncementRepo(appDB), auditRepo)
+	dashboardSvc := service.NewDashboardService(repo.NewDashboardRepo(appDB))
+	platformStatsSvc := service.NewPlatformService(repo.NewPlatformStatsRepo(adminDB), auditRepo)
 	halaqatH := apihandler.NewHalaqatHandler(halaqahSvc)
 	studentsH := apihandler.NewStudentsHandler(studentSvc)
 	teachersH := apihandler.NewTeachersHandler(inviteSvc)
 	attendanceH := apihandler.NewAttendanceHandler(attendanceSvc)
 	announcementsH := apihandler.NewAnnouncementsHandler(announcementSvc)
+	dashboardH := apihandler.NewDashboardHandler(dashboardSvc)
+	platformStatsH := apihandler.NewPlatformStatsHandler(platformStatsSvc)
 
 	recitationSvc := service.NewRecitationService(repo.NewRecitationRepo(appDB), auditRepo)
 	recitationsH := apihandler.NewRecitationsHandler(recitationSvc)
@@ -159,6 +163,8 @@ func main() {
 		pr.Get("/api/v1/organizations", platformH.ListOrgs)
 		pr.Get("/api/v1/organizations/{slug}", platformH.GetOrgBySlug)
 		pr.Post("/api/v1/organizations/{id}/invite", platformH.GenerateInvite)
+		pr.Get("/api/v1/platform/stats", platformStatsH.Stats)
+		pr.Get("/api/v1/platform/audit-log", platformStatsH.AuditLog)
 	})
 
 	// Center-admin routes (super_admin can also access).
@@ -177,6 +183,9 @@ func main() {
 		ca.Get("/api/v1/announcements", announcementsH.List)
 		ca.Delete("/api/v1/announcements/{id}", announcementsH.Delete)
 		ca.Patch("/api/v1/organizations/me/landing", platformH.UpdateLanding)
+		ca.Get("/api/v1/dashboard/stats", dashboardH.Stats)
+		ca.Get("/api/v1/dashboard/attendance-trends", dashboardH.AttendanceTrends)
+		ca.Get("/api/v1/dashboard/recitation-activity", dashboardH.RecitationActivity)
 	})
 
 	// Teacher + admin routes (read-only listing + attendance marking + recitation recording).
