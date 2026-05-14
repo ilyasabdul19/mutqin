@@ -78,6 +78,26 @@ func (r *AttendanceRepo) ListByStudent(ctx context.Context, studentID uuid.UUID,
 	return rows, nil
 }
 
+// ListByOrgSince returns attendance rows recorded after `since`, ascending by
+// recorded_at. Tenant is applied via TenantScoped's BeforeSelect when ctx
+// carries a tenant. Limit is clamped to (0, 500]; default 200.
+func (r *AttendanceRepo) ListByOrgSince(ctx context.Context, since time.Time, limit int) ([]model.Attendance, error) {
+	if limit <= 0 || limit > 500 {
+		limit = 200
+	}
+	var rows []model.Attendance
+	err := r.idb(ctx).NewSelect().
+		Model(&rows).
+		Where("recorded_at > ?", since).
+		OrderExpr("recorded_at ASC").
+		Limit(limit).
+		Scan(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("attendance since: %w", err)
+	}
+	return rows, nil
+}
+
 func (r *AttendanceRepo) ListByOrg(ctx context.Context, halaqahID *uuid.UUID, from, to time.Time, limit, offset int) ([]model.Attendance, error) {
 	var rows []model.Attendance
 	q := r.idb(ctx).NewSelect().

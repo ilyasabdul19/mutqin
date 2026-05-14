@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/uptrace/bun"
@@ -75,4 +76,24 @@ func (r *RecitationRepo) GetLatestByStudent(ctx context.Context, studentID uuid.
 		return nil, fmt.Errorf("get latest recitation: %w", err)
 	}
 	return rec, nil
+}
+
+// ListByOrgSince returns recitations recorded after `since`, ascending by
+// recorded_at. Tenant is applied via TenantScoped's BeforeSelect when ctx
+// carries a tenant. Limit is clamped to (0, 500]; default 200.
+func (r *RecitationRepo) ListByOrgSince(ctx context.Context, since time.Time, limit int) ([]model.Recitation, error) {
+	if limit <= 0 || limit > 500 {
+		limit = 200
+	}
+	var rows []model.Recitation
+	err := r.idb(ctx).NewSelect().
+		Model(&rows).
+		Where("recorded_at > ?", since).
+		OrderExpr("recorded_at ASC").
+		Limit(limit).
+		Scan(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("recitations since: %w", err)
+	}
+	return rows, nil
 }
