@@ -138,6 +138,14 @@ func main() {
 	recitationSvc := service.NewRecitationService(repo.NewRecitationRepo(appDB), auditRepo)
 	recitationsH := apihandler.NewRecitationsHandler(recitationSvc)
 
+	syncSvc := service.NewSyncService(
+		repo.NewRecitationRepo(appDB),
+		repo.NewAttendanceRepo(appDB),
+		repo.NewSyncConflictRepo(appDB),
+		auditRepo,
+	)
+	syncH := apihandler.NewSyncHandler(syncSvc)
+
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
 	r.Use(middleware.Logger(logger))
@@ -189,6 +197,8 @@ func main() {
 		tr.Post("/api/v1/recitations/batch", recitationsH.RecordBatch)
 		tr.Get("/api/v1/students/{id}/recitations", recitationsH.ListByStudent)
 		tr.Get("/api/v1/students/{id}/recitations/latest", recitationsH.LatestByStudent)
+		tr.Post("/api/v1/sync/push", syncH.Push)
+		tr.Get("/api/v1/sync/pull", syncH.Pull)
 	})
 
 	srv := &http.Server{
