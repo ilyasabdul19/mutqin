@@ -194,3 +194,58 @@ func TestAttendanceRepo_ListByStudent_DateRangeNarrows(t *testing.T) {
 		t.Fatalf("wide window: len=%d want 3", len(all))
 	}
 }
+
+func TestAttendanceRepo_ListByOrgSince_FiltersAndOrdersAsc(t *testing.T) {
+	t.Cleanup(func() { truncateAll(t) })
+	ctx := context.Background()
+	fx := setupAttendanceFixture(t, "a-since")
+
+	r := repo.NewAttendanceRepo(testAdmin)
+	date := time.Date(2026, 5, 12, 0, 0, 0, 0, time.UTC)
+
+	older := time.Now().Add(-2 * time.Hour)
+	mid := time.Now().Add(-1 * time.Hour)
+	newer := time.Now().Add(-10 * time.Minute)
+	rows := []model.Attendance{
+		{OrganizationID: fx.OrgID, HalaqahID: fx.HalaqahID, StudentID: fx.Students[0], Date: date, Status: "present", RecordedAt: older},
+		{OrganizationID: fx.OrgID, HalaqahID: fx.HalaqahID, StudentID: fx.Students[1], Date: date, Status: "present", RecordedAt: mid},
+		{OrganizationID: fx.OrgID, HalaqahID: fx.HalaqahID, StudentID: fx.Students[2], Date: date, Status: "absent", RecordedAt: newer},
+	}
+	if err := r.UpsertBatch(ctx, rows); err != nil {
+		t.Fatalf("UpsertBatch: %v", err)
+	}
+
+	since := time.Now().Add(-90 * time.Minute)
+	got, err := r.ListByOrgSince(tenant.With(ctx, fx.OrgID), since, 100)
+	if err != nil {
+		t.Fatalf("ListByOrgSince: %v", err)
+	}
+	if len(got) != 2 {
+		t.Fatalf("len=%d want 2 (mid + newer)", len(got))
+	}
+	if !got[0].RecordedAt.Before(got[1].RecordedAt) {
+		t.Fatalf("not ascending: %v then %v", got[0].RecordedAt, got[1].RecordedAt)
+	}
+}
+
+func TestAttendanceRepo_ListByOrgSince_ClampsLimit(t *testing.T) {
+	t.Cleanup(func() { truncateAll(t) })
+	ctx := context.Background()
+	fx := setupAttendanceFixture(t, "a-since-clamp")
+
+	r := repo.NewAttendanceRepo(testAdmin)
+	got, err := r.ListByOrgSince(tenant.With(ctx, fx.OrgID), time.Unix(0, 0), 0)
+	if err != nil {
+		t.Fatalf("ListByOrgSince(limit=0): %v", err)
+	}
+	if len(got) != 0 {
+		t.Fatalf("len=%d want 0", len(got))
+	}
+	got, err = r.ListByOrgSince(tenant.With(ctx, fx.OrgID), time.Unix(0, 0), 10000)
+	if err != nil {
+		t.Fatalf("ListByOrgSince(limit=10000): %v", err)
+	}
+	if len(got) != 0 {
+		t.Fatalf("len=%d want 0 (still empty)", len(got))
+	}
+}

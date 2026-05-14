@@ -163,3 +163,68 @@ func TestRecitationRepo_GetLatest_NotFound(t *testing.T) {
 		t.Fatalf("err=%v want ErrNotFound", err)
 	}
 }
+
+func TestRecitationRepo_ListByOrgSince_FiltersAndOrdersAsc(t *testing.T) {
+	t.Cleanup(func() { truncateAll(t) })
+	f := seedRecitationFixture(t, "since")
+	ctx := context.Background()
+
+	r := repo.NewRecitationRepo(testAdmin)
+
+	older := time.Now().Add(-2 * time.Hour)
+	mid := time.Now().Add(-1 * time.Hour)
+	newer := time.Now().Add(-10 * time.Minute)
+	for i, when := range []time.Time{older, mid, newer} {
+		rec := &model.Recitation{
+			OrganizationID: f.orgID,
+			StudentID:      f.studentID,
+			HalaqahID:      f.halaqahID,
+			TeacherID:      f.teacherID,
+			Type:           "new_hifz",
+			SurahNumber:    i + 1,
+			AyahFrom:       1,
+			AyahTo:         3,
+			Grade:          "jayyid",
+			RecordedAt:     when,
+		}
+		if err := r.Create(ctx, rec); err != nil {
+			t.Fatalf("Create #%d: %v", i, err)
+		}
+	}
+
+	since := time.Now().Add(-90 * time.Minute) // strictly between older and mid
+	got, err := r.ListByOrgSince(tenant.With(ctx, f.orgID), since, 100)
+	if err != nil {
+		t.Fatalf("ListByOrgSince: %v", err)
+	}
+	if len(got) != 2 {
+		t.Fatalf("len=%d want 2 (mid + newer)", len(got))
+	}
+	// Ascending: mid first, then newer.
+	if !got[0].RecordedAt.Before(got[1].RecordedAt) {
+		t.Fatalf("not ascending: %v then %v", got[0].RecordedAt, got[1].RecordedAt)
+	}
+}
+
+func TestRecitationRepo_ListByOrgSince_ClampsLimit(t *testing.T) {
+	t.Cleanup(func() { truncateAll(t) })
+	f := seedRecitationFixture(t, "since-clamp")
+	ctx := context.Background()
+
+	r := repo.NewRecitationRepo(testAdmin)
+	// Empty table — just exercise limit clamp via no error.
+	got, err := r.ListByOrgSince(tenant.With(ctx, f.orgID), time.Unix(0, 0), 0)
+	if err != nil {
+		t.Fatalf("ListByOrgSince(limit=0): %v", err)
+	}
+	if len(got) != 0 {
+		t.Fatalf("len=%d want 0", len(got))
+	}
+	got, err = r.ListByOrgSince(tenant.With(ctx, f.orgID), time.Unix(0, 0), 10000)
+	if err != nil {
+		t.Fatalf("ListByOrgSince(limit=10000): %v", err)
+	}
+	if len(got) != 0 {
+		t.Fatalf("len=%d want 0 (still empty)", len(got))
+	}
+}
