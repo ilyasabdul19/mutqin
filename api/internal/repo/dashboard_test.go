@@ -34,15 +34,33 @@ func withTenantTx(t *testing.T, orgID uuid.UUID) (context.Context, func()) {
 	return scopedCtx, cleanup
 }
 
-func seedRecitation(t *testing.T, orgID, halaqahID, studentID uuid.UUID, recordedAt time.Time) {
+func seedRecitation(t *testing.T, orgID, halaqahID, studentID, teacherID uuid.UUID, recordedAt time.Time) {
 	t.Helper()
 	_, err := testAdmin.ExecContext(context.Background(),
-		`INSERT INTO recitations (organization_id, halaqah_id, student_id, surah, ayah_from, ayah_to, recorded_at)
-		 VALUES (?, ?, ?, 'al-fatihah', 1, 7, ?)`,
-		orgID, halaqahID, studentID, recordedAt)
+		`INSERT INTO recitations (organization_id, halaqah_id, student_id, teacher_id, type, surah_number, ayah_from, ayah_to, grade, recorded_at)
+		 VALUES (?, ?, ?, ?, 'new_hifz', 1, 1, 7, 'mumtaz', ?)`,
+		orgID, halaqahID, studentID, teacherID, recordedAt)
 	if err != nil {
 		t.Fatalf("seed recitation: %v", err)
 	}
+}
+
+// seedTeacherForOrg creates a teacher user for the given org and returns the ID.
+// Used by tests that need a teacher_id to satisfy recitations.teacher_id NOT NULL.
+func seedTeacherForOrg(t *testing.T, orgID uuid.UUID, emailSuffix string) uuid.UUID {
+	t.Helper()
+	u := &model.User{
+		Name:           "T-" + emailSuffix,
+		Email:          ptrString("dash-t-" + emailSuffix + "@x"),
+		Role:           "teacher",
+		OrganizationID: ptrUUID(orgID),
+		Status:         "active",
+		Language:       "ar",
+	}
+	if err := repo.NewUserRepo(testAdmin).Create(context.Background(), u); err != nil {
+		t.Fatalf("seed teacher: %v", err)
+	}
+	return u.ID
 }
 
 func TestDashboardRepo_CenterStats_CountsActiveAndRecent(t *testing.T) {
@@ -92,11 +110,12 @@ func TestDashboardRepo_CenterStats_CountsActiveAndRecent(t *testing.T) {
 
 	// Recitations for orgA — 2 in last 30 days, 1 older.
 	now := time.Now().UTC()
-	seedRecitation(t, orgA.ID, hA.ID, studentIDs[0], now.AddDate(0, 0, -3))
-	seedRecitation(t, orgA.ID, hA.ID, studentIDs[1], now.AddDate(0, 0, -10))
-	seedRecitation(t, orgA.ID, hA.ID, studentIDs[2], now.AddDate(0, 0, -60))
+	seedRecitation(t, orgA.ID, hA.ID, studentIDs[0], teacherA.ID, now.AddDate(0, 0, -3))
+	seedRecitation(t, orgA.ID, hA.ID, studentIDs[1], teacherA.ID, now.AddDate(0, 0, -10))
+	seedRecitation(t, orgA.ID, hA.ID, studentIDs[2], teacherA.ID, now.AddDate(0, 0, -60))
 	// orgB recitation — must not bleed through.
-	seedRecitation(t, orgB.ID, hB.ID, sB.ID, now.AddDate(0, 0, -1))
+	teacherB := seedTeacherForOrg(t, orgB.ID, "B")
+	seedRecitation(t, orgB.ID, hB.ID, sB.ID, teacherB, now.AddDate(0, 0, -1))
 
 	// Attendance — 3 present, 1 absent on a recent date.
 	today := now.Truncate(24 * time.Hour)
@@ -234,12 +253,13 @@ func TestDashboardRepo_RecitationActivity_OrdersByCountDesc(t *testing.T) {
 		t.Fatalf("s2: %v", err)
 	}
 
+	teacher := seedTeacherForOrg(t, org.ID, "RA")
 	now := time.Now().UTC()
 	// hHigh gets 3 recitations, hLow gets 1.
 	for i := 0; i < 3; i++ {
-		seedRecitation(t, org.ID, hHigh.ID, s2.ID, now.AddDate(0, 0, -i))
+		seedRecitation(t, org.ID, hHigh.ID, s2.ID, teacher, now.AddDate(0, 0, -i))
 	}
-	seedRecitation(t, org.ID, hLow.ID, s1.ID, now.AddDate(0, 0, -1))
+	seedRecitation(t, org.ID, hLow.ID, s1.ID, teacher, now.AddDate(0, 0, -1))
 
 	scopedCtx, cleanup := withTenantTx(t, org.ID)
 	defer cleanup()

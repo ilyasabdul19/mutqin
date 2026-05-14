@@ -58,11 +58,13 @@ func TestPlatformStatsRepo_Compute_AggregatesAcrossTenants(t *testing.T) {
 	}
 
 	// Recitations — 3 recent (across A+B), 1 old (must not count).
+	teacherA := seedTeacherForOrg(t, orgA.ID, "PS-A")
+	teacherB := seedTeacherForOrg(t, orgB.ID, "PS-B")
 	now := time.Now().UTC()
-	seedRecitation(t, orgA.ID, hA.ID, studentsA[0], now.AddDate(0, 0, -1))
-	seedRecitation(t, orgA.ID, hA.ID, studentsA[1], now.AddDate(0, 0, -2))
-	seedRecitation(t, orgB.ID, hB.ID, sB.ID, now.AddDate(0, 0, -5))
-	seedRecitation(t, orgA.ID, hA.ID, studentsA[0], now.AddDate(0, 0, -60))
+	seedRecitation(t, orgA.ID, hA.ID, studentsA[0], teacherA, now.AddDate(0, 0, -1))
+	seedRecitation(t, orgA.ID, hA.ID, studentsA[1], teacherA, now.AddDate(0, 0, -2))
+	seedRecitation(t, orgB.ID, hB.ID, sB.ID, teacherB, now.AddDate(0, 0, -5))
+	seedRecitation(t, orgA.ID, hA.ID, studentsA[0], teacherA, now.AddDate(0, 0, -60))
 
 	r := repo.NewPlatformStatsRepo(testAdmin)
 	got, err := r.Compute(context.Background())
